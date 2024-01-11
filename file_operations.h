@@ -9,5 +9,7 @@ char *get_filename(char *path);
 
 char *get_filetype_extension(char *filename);
 
+int get_file_size(char *path);
+
 #endif
 

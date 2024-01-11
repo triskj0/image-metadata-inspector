@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include "file_operations.h"
 
 
@@ -52,3 +53,10 @@ char *get_filetype_extension(char *filename) {
     return extension;
 }
 
+int get_file_size(char *path) {
+    struct stat file_status;
+    if (stat(path, &file_status) < 0) {
+        return -1;
+    }
+    return file_status.st_size;
+}

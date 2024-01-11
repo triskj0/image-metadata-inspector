@@ -15,7 +15,9 @@ int main(int argc, char *argv[]) {
     char *extension = get_filetype_extension(filename);
     printf("file extension: %s\n", extension);
 
-
+    // filesize
+    int file_size = get_file_size(path);
+    printf("file size: %d bytes", file_size);
 
     free(filename);
     return 0;
