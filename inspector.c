@@ -4,22 +4,35 @@
 
 
 int main(int argc, char *argv[]) {
+    const char *path, *extension;
+    char *filename;
+    int file_size;
+    char *last_change_date;
 
-    // filename
-    char *path = "";
-    char *filename = get_filename(path);
+    path = "";
+    filename = get_filename(path);
     printf("\nfilename: %s\n", filename);
 
-    
-    // filetype
-    char *extension = get_filetype_extension(filename);
+    extension = get_filetype_extension(filename);
     printf("file extension: %s\n", extension);
 
-    // filesize
-    int file_size = get_file_size(path);
-    printf("file size: %d bytes", file_size);
+    file_size = get_file_size(path);
+    printf("file size: %d bytes\n", file_size);
+
+
+    // image height
+
+
+    // image width
+
+    
+    last_change_date = get_last_change_date(path);
+    printf("last change date: %s\n", last_change_date);
+
+
 
     free(filename);
+    free(last_change_date);
     return 0;
 }
 
