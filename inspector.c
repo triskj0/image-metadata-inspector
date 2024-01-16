@@ -11,25 +11,19 @@ int main(int argc, char *argv[]) {
 
     path = "";
     filename = get_filename(path);
-    printf("\nfilename: %s\n", filename);
+    printf("\nfilename:\t\t%s\n", filename);
 
     extension = get_filetype_extension(filename);
-    printf("file extension: %s\n", extension);
+    printf("file extension:\t\t%s\n", extension);
 
     file_size = get_file_size(path);
-    printf("file size: %d bytes\n", file_size);
+    printf("file size:\t\t%d bytes\n", file_size);
 
 
-    // image height
-
-
-    // image width
-
-    
     last_change_date = get_last_change_date(path);
-    printf("last change date: %s\n", last_change_date);
+    printf("last change date:\t%s\n", last_change_date);
 
-
+    print_IHDR_chunk_data(path);
 
     free(filename);
     free(last_change_date);

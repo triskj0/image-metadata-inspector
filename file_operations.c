@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <time.h>
+#include <stdbool.h>
 #include "file_operations.h"
 
 
@@ -78,4 +79,52 @@ char *get_last_change_date(const char *path) {
 }
 
 
+void print_IHDR_chunk_data(const char *path) {
+    FILE *image_file = NULL;
+    int c;
+    int index = 0;
+    int length, width, height, bit_depth, color_type, compression_method, filter_method, interlace_method;
+
+    errno_t err = fopen_s(&image_file, path, "rb");
+
+    // skip png signature bytes + 4 length bytes + 4 chunk type (IHDR) bytes 
+    for (int i = 0; i < SIGNATURE_END_INDEX+8; i++) {
+        fgetc(image_file);
+    }
+
+    width = 0;
+    for (int i = 0; i < 4; i++) {
+        if (width == 0) {
+            width = fgetc(image_file);
+        } else {
+            width = width * 256 + fgetc(image_file);
+        }
+    }
+
+    height = 0;
+    for (int i = 0; i < 4; i++) {
+        if (height == 0) {
+            height = fgetc(image_file);
+        } else {
+            height = height * 256 + fgetc(image_file);
+        }
+    }
+
+    bit_depth = fgetc(image_file);
+    color_type = fgetc(image_file);
+    compression_method = fgetc(image_file);
+    filter_method = fgetc(image_file);
+    interlace_method = fgetc(image_file);
+
+    printf("IHDR chunk data:\n");
+    printf("width:\t\t\t%d\n", width);
+    printf("height:\t\t\t%d\n", height);
+    printf("bit depth:\t\t%d\n", bit_depth);
+    printf("color type:\t\t%d\n", color_type);
+    printf("compression method:\t%d\n", compression_method);
+    printf("filter method:\t\t%d\n", filter_method);
+    printf("interlace method:\t%d\n\n", interlace_method);
+
+    fclose(image_file);
+}
 
