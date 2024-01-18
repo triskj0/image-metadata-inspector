@@ -8,7 +8,7 @@
 
 
 // index2 is non-inclusive
-char *slice_string(const char *str, int index1, int index2) {
+char *_slice_string(const char *str, int index1, int index2) {
     int new_str_len = index2 - index1;
 
     char *new_str = malloc(new_str_len*sizeof(char));
@@ -35,7 +35,7 @@ char *get_filename(const char *path) {
             last_slash_index = i;
         }
     }
-    filename = slice_string(path, last_slash_index+1, path_len);
+    filename = _slice_string(path, last_slash_index+1, path_len);
 
     return filename;
 }
@@ -51,7 +51,13 @@ char *get_filetype_extension(const char *filename) {
         }
     }
 
-    char *extension = slice_string(filename, extension_start_index, filename_len);
+    char *extension = _slice_string(filename, extension_start_index, filename_len);
+
+    if (strcmp(extension, "png") != 0) {
+        printf("\n[ERROR] The filetype has to be PNG, not %s.\n", extension);
+        exit(EXIT_FAILURE);
+    }
+
     return extension;
 }
 
@@ -79,18 +85,21 @@ char *get_last_change_date(const char *path) {
 }
 
 
-void print_IHDR_chunk_data(const char *path) {
-    FILE *image_file = NULL;
+
+/* **********************
+ *
+ *      IHDR chunk
+ *
+ * *********************/
+
+
+void print_IHDR_chunk_data(const char *path, FILE *image_file) {
     int c;
     int index = 0;
     int length, width, height, bit_depth, color_type, compression_method, filter_method, interlace_method;
 
-    errno_t err = fopen_s(&image_file, path, "rb");
-
     // skip png signature bytes + 4 length bytes + 4 chunk type (IHDR) bytes 
-    for (int i = 0; i < SIGNATURE_END_INDEX+8; i++) {
-        fgetc(image_file);
-    }
+    fseek(image_file, SIGNATURE_END_INDEX+8, SEEK_CUR);
 
     width = 0;
     for (int i = 0; i < 4; i++) {
@@ -116,7 +125,7 @@ void print_IHDR_chunk_data(const char *path) {
     filter_method = fgetc(image_file);
     interlace_method = fgetc(image_file);
 
-    printf("IHDR chunk data:\n");
+    printf("\n\n ------------ IHDR chunk data ------------ \n");
     printf("width:\t\t\t%d\n", width);
     printf("height:\t\t\t%d\n", height);
     printf("bit depth:\t\t%d\n", bit_depth);
@@ -124,7 +133,174 @@ void print_IHDR_chunk_data(const char *path) {
     printf("compression method:\t%d\n", compression_method);
     printf("filter method:\t\t%d\n", filter_method);
     printf("interlace method:\t%d\n\n", interlace_method);
+}
 
-    fclose(image_file);
+
+
+/* **********************
+ *
+ *      tEXt chunk
+ *
+ * *********************/
+
+
+void print_tEXt_element(FILE *image_file, int length) {
+    int c;
+
+    for (int i = 0; i < length; i++) {
+        c = fgetc(image_file);
+        putchar(c);
+    }
+}
+
+
+void parse_tEXt_chunk(FILE *image_file) {
+
+    /*
+     * all available keywords:
+     *      Title,
+     *      Author,
+     *      Description, Disclaimer,
+     *      Copyright, CreationTime, Comment,
+     *      Software, Source,
+     *      Warning 
+     */ 
+
+    int first_char, c, c2, c3, length;
+
+    fseek(image_file, -5, SEEK_CUR); // the byte before "tEXt" stores its length
+    length = fgetc(image_file);
+
+    fseek(image_file, 4, SEEK_CUR);
+    first_char = fgetc(image_file);
+
+
+    switch (first_char) {
+        case 'T':
+            printf("\nTitle:\t\t\t");
+
+            // go forward -number of remaining characters in the keyword- + 1 for a null character
+            fseek(image_file, 5, SEEK_CUR); 
+            length -= 6; // length of "Title" + 1 for a null character
+
+            print_tEXt_element(image_file, length);
+            break;
+
+        case 'A':
+            printf("\nAuthor:\t\t\t");
+            fseek(image_file, 6, SEEK_CUR);
+            length -= 7;
+
+            print_tEXt_element(image_file, length);
+            break;
+
+        case 'D':
+            if ((c2 = fgetc(image_file)) == 'e') { 
+                printf("\nDescription:\t\t");
+                fseek(image_file, 10, SEEK_CUR);
+                length -= 12;
+
+                print_tEXt_element(image_file, length);
+                break;
+            }
+
+            printf("\nDisclaimer:\t\t");
+            fseek(image_file, 9, SEEK_CUR);
+            length -= 11;
+
+            print_tEXt_element(image_file, length);
+            break;
+
+        case 'C':
+            c2 = fgetc(image_file);
+
+            if (c2 == 'r') {
+                printf("\nCreation time:\t\t");
+                fseek(image_file, 11, SEEK_CUR);
+                length -= 13;
+
+                print_tEXt_element(image_file, length);
+                break;
+            }
+
+            c3 = fgetc(image_file);
+
+            if (c3 == 'p') {
+                printf("\nCopyright:\t\t");
+                fseek(image_file, 7, SEEK_CUR);
+                length -= 10;
+
+                print_tEXt_element(image_file, length);
+                break;
+            }
+
+            printf("\nComment:\t\t");
+            fseek(image_file, 5, SEEK_CUR);
+            length -= 8;
+
+            print_tEXt_element(image_file, length);
+            break;
+
+        case 'S':
+            fseek(image_file, 1, SEEK_CUR);
+            c3 = fgetc(image_file);
+            
+            if (c3 == 'u') {
+                printf("\nSource:\t\t\t");
+                fseek(image_file, 4, SEEK_CUR);
+                length -= 7;
+
+                print_tEXt_element(image_file, length);
+                break;
+            }
+
+            printf("\nSoftware:\t\t");
+            fseek(image_file, 6, SEEK_CUR);
+            length -= 9;
+
+            print_tEXt_element(image_file, length);
+            break;
+
+
+        case 'W':
+            printf("\nWarning:\t\t\t");
+            fseek(image_file, 7, SEEK_CUR);
+            length -= 8;
+
+            print_tEXt_element(image_file, length);
+            break;
+    }
+}
+
+
+void print_tEXt_chunk_data(FILE *image_file) {
+    int c, i;
+    int next_c0, next_c1, next_c2;
+    static bool title_printed = false;
+    static bool newline_printed = false;
+
+    while ((c = fgetc(image_file)) != EOF) {
+        if (c == 't') {
+            next_c0 = fgetc(image_file);
+            next_c1 = fgetc(image_file);
+            next_c2 = fgetc(image_file);
+
+            if (next_c0 == 'E' && next_c1 == 'X' && next_c2 == 't') {
+                if (!title_printed) {
+                    printf("\n ------------ tEXt chunk data ------------ ");
+                    title_printed = true;
+                }
+                parse_tEXt_chunk(image_file);
+                print_tEXt_chunk_data(image_file);
+                break;
+            }
+            fseek(image_file, -3, SEEK_CUR);
+        }
+    }
+
+    if (!newline_printed) {
+        putchar('\n');
+        newline_printed = true;
+    }
 }
 
