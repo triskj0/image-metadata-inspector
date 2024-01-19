@@ -40,6 +40,7 @@ int main(int argc, char **argv) {
 
     print_tEXt_chunk_data(image_file);
     
+    print_iTXt_chunk_data(image_file);
 
     fclose(image_file);
     return EXIT_SUCCESS;

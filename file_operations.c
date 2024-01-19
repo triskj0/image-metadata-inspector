@@ -144,8 +144,9 @@ void print_IHDR_chunk_data(const char *path, FILE *image_file) {
  * ************************/
 
 void _get_PLTE_data(FILE *image_file) {
-    int c;
+    int c, red_value, green_value, blue_value;
     int length = 0;
+    int number_of_color_examples;
 
     // 4 bytes before "PLTE" are its length
     fseek(image_file, -8, SEEK_CUR);
@@ -171,7 +172,8 @@ void _get_PLTE_data(FILE *image_file) {
         }
     }
 
-    printf("\nlength:\t\t\t%d", length);
+    printf("\npalette length:\t\t%d", length);
+    printf("\nnumber of colors:\t%d", length/3);
 }
 
 
@@ -199,7 +201,7 @@ void print_PLTE_chunk_data(FILE *image_file) {
             next_c2 = fgetc(image_file);
 
             if (next_c0 == 'L' && next_c1 == 'T' && next_c2 == 'E') {
-                printf("\n ------------ PLTE chunk data ------------ ");
+                printf("\n\n ------------ PLTE chunk data ------------ ");
                 _get_PLTE_data(image_file);
                 return;
 
@@ -218,7 +220,7 @@ void print_PLTE_chunk_data(FILE *image_file) {
  * *********************/
 
 
-void _print_tEXt_element(FILE *image_file, int length) {
+void _print_text_element(FILE *image_file, int length) {
     int c;
 
     for (int i = 0; i < length; i++) {
@@ -257,7 +259,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
             fseek(image_file, 5, SEEK_CUR); 
             length -= 6; // length of "Title" + 1 for a null character
 
-            _print_tEXt_element(image_file, length);
+            _print_text_element(image_file, length);
             break;
 
         case 'A':
@@ -265,7 +267,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
             fseek(image_file, 6, SEEK_CUR);
             length -= 7;
 
-            _print_tEXt_element(image_file, length);
+            _print_text_element(image_file, length);
             break;
 
         case 'D':
@@ -274,7 +276,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
                 fseek(image_file, 10, SEEK_CUR);
                 length -= 12;
 
-                _print_tEXt_element(image_file, length);
+                _print_text_element(image_file, length);
                 break;
             }
 
@@ -282,7 +284,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
             fseek(image_file, 9, SEEK_CUR);
             length -= 11;
 
-            _print_tEXt_element(image_file, length);
+            _print_text_element(image_file, length);
             break;
 
         case 'C':
@@ -293,7 +295,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
                 fseek(image_file, 11, SEEK_CUR);
                 length -= 13;
 
-                _print_tEXt_element(image_file, length);
+                _print_text_element(image_file, length);
                 break;
             }
 
@@ -304,7 +306,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
                 fseek(image_file, 7, SEEK_CUR);
                 length -= 10;
 
-                _print_tEXt_element(image_file, length);
+                _print_text_element(image_file, length);
                 break;
             }
 
@@ -312,7 +314,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
             fseek(image_file, 5, SEEK_CUR);
             length -= 8;
 
-            _print_tEXt_element(image_file, length);
+            _print_text_element(image_file, length);
             break;
 
         case 'S':
@@ -324,7 +326,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
                 fseek(image_file, 4, SEEK_CUR);
                 length -= 7;
 
-                _print_tEXt_element(image_file, length);
+                _print_text_element(image_file, length);
                 break;
             }
 
@@ -332,7 +334,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
             fseek(image_file, 6, SEEK_CUR);
             length -= 9;
 
-            _print_tEXt_element(image_file, length);
+            _print_text_element(image_file, length);
             break;
 
 
@@ -341,17 +343,20 @@ void _parse_tEXt_chunk(FILE *image_file) {
             fseek(image_file, 7, SEEK_CUR);
             length -= 8;
 
-            _print_tEXt_element(image_file, length);
+            _print_text_element(image_file, length);
             break;
     }
 }
 
 
 void print_tEXt_chunk_data(FILE *image_file) {
-    int c, i;
-    int next_c0, next_c1, next_c2;
+    int c, next_c0, next_c1, next_c2;
     static bool title_printed = false;
-    static bool newline_printed = false;
+
+    /* tEXt has no ordering constraints,
+    so it's better to look for it from the start of the file */
+    if (!title_printed)
+        fseek(image_file, SIGNATURE_END_INDEX, SEEK_SET);
 
     while ((c = fgetc(image_file)) != EOF) {
         if (c == 't') {
@@ -361,7 +366,7 @@ void print_tEXt_chunk_data(FILE *image_file) {
 
             if (next_c0 == 'E' && next_c1 == 'X' && next_c2 == 't') {
                 if (!title_printed) {
-                    printf("\n ------------ tEXt chunk data ------------ ");
+                    printf("\n\n ------------ tEXt chunk data ------------ ");
                     title_printed = true;
                 }
                 _parse_tEXt_chunk(image_file);
@@ -371,10 +376,40 @@ void print_tEXt_chunk_data(FILE *image_file) {
             fseek(image_file, -3, SEEK_CUR);
         }
     }
+}
 
-    if (!newline_printed && title_printed) {
-        putchar('\n');
-        newline_printed = true;
+
+void print_iTXt_chunk_data(FILE *image_file) {
+    int c, next_c0, next_c1, next_c2, length; 
+    static bool title_printed = false;
+
+    /* no ordering constraints here either */
+    if (!title_printed)
+        fseek(image_file, SIGNATURE_END_INDEX, SEEK_SET);
+    
+    while ((c = fgetc(image_file)) != EOF) {
+        if (c == 'i') {
+            next_c0 = fgetc(image_file);
+            next_c1 = fgetc(image_file);
+            next_c2 = fgetc(image_file);
+
+            if (next_c0 == 'T' && next_c1 == 'X' && next_c2 == 't') {
+                if (!title_printed) {
+                    printf("\n\n\n\n ------------ iTXt chunk data ------------ ");
+                    title_printed = true;
+                }
+                
+                fseek(image_file, -5, SEEK_CUR);
+                length = fgetc(image_file);
+                fseek(image_file, 5, SEEK_CUR);
+
+                printf("\niTXt contents:\t\t");
+                _print_text_element(image_file, length);
+                break;
+            }
+
+            fseek(image_file, -3, SEEK_CUR);
+        }
     }
 }
 

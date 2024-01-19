@@ -21,5 +21,7 @@ void print_PLTE_chunk_data(FILE *image_file);
 
 void print_tEXt_chunk_data(FILE *image_file);
 
+void print_iTXt_chunk_data(FILE *image_file);
+
 #endif
 
