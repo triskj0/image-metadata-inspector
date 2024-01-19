@@ -36,6 +36,8 @@ int main(int argc, char **argv) {
     errno_t err = fopen_s(&image_file, path, "rb");
     print_IHDR_chunk_data(path, image_file);
 
+    print_PLTE_chunk_data(image_file);
+
     print_tEXt_chunk_data(image_file);
     
 

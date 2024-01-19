@@ -17,6 +17,8 @@ char *get_last_change_date(const char *path);
 
 void print_IHDR_chunk_data(const char *path, FILE *image_file);
 
+void print_PLTE_chunk_data(FILE *image_file);
+
 void print_tEXt_chunk_data(FILE *image_file);
 
 #endif
