@@ -44,10 +44,10 @@ char *get_filename(const char *path) {
 char *get_filetype_extension(const char *filename) {
     int filename_len = (int) strlen(filename);
     int extension_start_index;
-    for (extension_start_index = 0; extension_start_index < filename_len; extension_start_index++) {
-        if (filename[extension_start_index] == '.') {
-            extension_start_index++;
-            break;
+
+    for (int i = 0; i < filename_len; i++) {
+        if (filename[i] == '.') {
+            extension_start_index = i + 1;
         }
     }
 
