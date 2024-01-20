@@ -15,13 +15,15 @@ int get_file_size(const char *path);
 
 char *get_last_change_date(const char *path);
 
-void print_IHDR_chunk_data(const char *path, FILE *image_file);
+int get_print_IHDR_chunk_data(const char *path, FILE *image_file);
 
 void print_PLTE_chunk_data(FILE *image_file);
 
 void print_tEXt_chunk_data(FILE *image_file);
 
 void print_iTXt_chunk_data(FILE *image_file);
+
+void print_bKGD_chunk_data(FILE *image_file, int color_type);
 
 #endif
 

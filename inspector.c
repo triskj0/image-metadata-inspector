@@ -25,6 +25,12 @@ int main(int argc, char **argv) {
     free(filename);
 
     file_size = get_file_size(path);
+
+    if (file_size == -1) {
+        printf("\n[ERROR] Invalid file-name, file was not found.\n");
+        exit(EXIT_FAILURE);
+    }
+
     printf("file size:\t\t%d bytes\n", file_size);
 
     last_change_date = get_last_change_date(path);
@@ -34,13 +40,13 @@ int main(int argc, char **argv) {
 
     // read chunk data
     errno_t err = fopen_s(&image_file, path, "rb");
-    print_IHDR_chunk_data(path, image_file);
 
+    int color_type = get_print_IHDR_chunk_data(path, image_file);
     print_PLTE_chunk_data(image_file);
-
+    print_bKGD_chunk_data(image_file, color_type);
     print_tEXt_chunk_data(image_file);
-    
     print_iTXt_chunk_data(image_file);
+
 
     fclose(image_file);
     return EXIT_SUCCESS;

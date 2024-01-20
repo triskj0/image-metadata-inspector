@@ -53,7 +53,7 @@ char *get_filetype_extension(const char *filename) {
 
     char *extension = _slice_string(filename, extension_start_index, filename_len);
 
-    if (strcmp(extension, "png") != 0) {
+    if (strcmp(extension, "png") != 0 && strcmp(extension, "PNG") != 0) {
         printf("\n[ERROR] The filetype has to be PNG, not %s.\n", extension);
         exit(EXIT_FAILURE);
     }
@@ -92,8 +92,7 @@ char *get_last_change_date(const char *path) {
  *
  * *********************/
 
-
-void print_IHDR_chunk_data(const char *path, FILE *image_file) {
+int get_print_IHDR_chunk_data(const char *path, FILE *image_file) {
     int c;
     int index = 0;
     int length, width, height, bit_depth, color_type, compression_method, filter_method, interlace_method;
@@ -133,6 +132,8 @@ void print_IHDR_chunk_data(const char *path, FILE *image_file) {
     printf("compression method:\t%d\n", compression_method);
     printf("filter method:\t\t%d\n", filter_method);
     printf("interlace method:\t%d\n\n", interlace_method);
+
+    return color_type;
 }
 
 
@@ -204,13 +205,11 @@ void print_PLTE_chunk_data(FILE *image_file) {
                 printf("\n\n ------------ PLTE chunk data ------------ ");
                 _get_PLTE_data(image_file);
                 return;
-
-            } else {
-                fseek(image_file, 3, SEEK_CUR);
             }
         }
     }
 }
+
 
 
 /* *********************
@@ -218,7 +217,6 @@ void print_PLTE_chunk_data(FILE *image_file) {
  *      tEXt chunk
  *
  * *********************/
-
 
 void _print_text_element(FILE *image_file, int length) {
     int c;
@@ -354,7 +352,8 @@ void print_tEXt_chunk_data(FILE *image_file) {
     static bool title_printed = false;
 
     /* tEXt has no ordering constraints,
-    so it's better to look for it from the start of the file */
+    better look for it from the start of the file */
+
     if (!title_printed)
         fseek(image_file, SIGNATURE_END_INDEX, SEEK_SET);
 
@@ -379,11 +378,20 @@ void print_tEXt_chunk_data(FILE *image_file) {
 }
 
 
+
+/* *********************
+ *
+ *      iTXt chunk
+ *
+ * *********************/
+
 void print_iTXt_chunk_data(FILE *image_file) {
     int c, next_c0, next_c1, next_c2, length; 
     static bool title_printed = false;
 
-    /* no ordering constraints here either */
+    /* no ordering constraints here either,
+     so move cursor to the start of the file */
+
     if (!title_printed)
         fseek(image_file, SIGNATURE_END_INDEX, SEEK_SET);
     
@@ -405,10 +413,65 @@ void print_iTXt_chunk_data(FILE *image_file) {
 
                 printf("\niTXt contents:\t\t");
                 _print_text_element(image_file, length);
+                
                 break;
             }
 
             fseek(image_file, -3, SEEK_CUR);
+        }
+    }
+}
+
+
+
+/* *********************
+ *
+ *      bKGD chunk
+ *
+ * *********************/
+
+void _display_bKGD_color(FILE *image_file, int color_type) {
+    int byte0, byte1, byte2;
+
+    switch (color_type) {
+        // case 3:         // indexed color
+        
+        case 0: case 4: // grayscale with/without alpha => 2 bytes
+            fseek(image_file, 1, SEEK_CUR);
+            byte0 = fgetc(image_file);
+            printf("\ncolor value:\t\t%d", byte0);
+            break;
+        
+        case 2: case 6: // truecolor, with/without alpha => 3 * 2 bytes
+            fseek(image_file, 1, SEEK_CUR);
+            byte0 = fgetc(image_file);
+            fseek(image_file, 1, SEEK_CUR);
+            byte1 = fgetc(image_file);
+            fseek(image_file, 1, SEEK_CUR);
+            byte2 = fgetc(image_file);
+
+            printf("\nbackground color value:\t[%d, %d, %d]", byte0, byte1, byte2);
+            break;
+    }
+}
+
+
+void print_bKGD_chunk_data(FILE *image_file, int color_type) {
+    fseek(image_file, IHDR_LENGTH, SEEK_SET);
+
+    int c, next_c0, next_c1, next_c2;
+
+    while ((c = fgetc(image_file)) != EOF) {
+        if (c == 'b') {
+            next_c0 = fgetc(image_file);
+            next_c1 = fgetc(image_file);
+            next_c2 = fgetc(image_file);
+
+            if (next_c0 == 'K' && next_c1 == 'G' && next_c2 == 'D') {
+                printf("\n\n ------------ bKGD chunk data ------------ ");
+                _display_bKGD_color(image_file, color_type);
+                return;
+            }
         }
     }
 }
