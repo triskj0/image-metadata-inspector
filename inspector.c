@@ -6,7 +6,7 @@
 int main(int argc, char **argv) {
     
     if (argc < 2) {
-        printf("\n[ERROR] Please provide a path to a PNG image.\n");
+        fprintf(stderr, "\n[ERROR] Please provide a path to a PNG image.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -27,7 +27,7 @@ int main(int argc, char **argv) {
     file_size = get_file_size(path);
 
     if (file_size == -1) {
-        printf("\n[ERROR] Invalid file-name, file was not found.\n");
+        fprintf(stderr, "\n[ERROR] Invalid file-name, file was not found.\n");
         exit(EXIT_FAILURE);
     }
 
@@ -42,7 +42,7 @@ int main(int argc, char **argv) {
     errno_t err = fopen_s(&image_file, path, "rb");
 
     if (err) {
-        printf("[ERROR] file could not be opened.");
+        fprintf(stderr, "[ERROR] file could not be opened.");
         exit(EXIT_FAILURE);
     }
 

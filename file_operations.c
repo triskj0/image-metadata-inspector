@@ -54,7 +54,7 @@ char *get_filetype_extension(const char *filename) {
     char *extension = _slice_string(filename, extension_start_index, filename_len);
 
     if (strcmp(extension, "png") != 0 && strcmp(extension, "PNG") != 0) {
-        printf("\n[ERROR] The filetype has to be PNG, not %s.\n", extension);
+        fprintf(stderr, "\n[ERROR] The filetype has to be PNG, not %s.\n", extension);
         exit(EXIT_FAILURE);
     }
 
@@ -82,7 +82,7 @@ char *get_last_change_date(const char *path) {
     errno_t err = ctime_s(date, 26*sizeof(char), &time_t_date);
 
     if (err) {
-        printf("[ERROR] an error occured while executing the ctime_s function.");
+        fprintf(stderr, "[ERROR] an error occured while executing the ctime_s function.");
         exit(EXIT_FAILURE);
     }    
 
@@ -210,11 +210,8 @@ void _get_PLTE_data(FILE *image_file) {
 
 void print_PLTE_chunk_data(FILE *image_file) {
     fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
-    bool success = _find_chunk(image_file, 'P', 'L', 'T', 'E');
-    
-    if (!success) {
-        return;
-    }
+
+    if (!_find_chunk(image_file, 'P', 'L', 'T', 'E')) return;
 
     printf("\n\n ------------ PLTE chunk data ------------\n");
     _get_PLTE_data(image_file);
@@ -368,11 +365,7 @@ void print_tEXt_chunk_data(FILE *image_file) {
         fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
     }
 
-    bool success = _find_chunk(image_file, 't', 'E', 'X', 't');
-
-    if (!success) {
-        return;
-    }
+    if (!_find_chunk(image_file, 't', 'E', 'X', 't')) return;
 
     if (!title_printed) {
         printf("\n\n ------------ tEXt chunk data ------------\n");
@@ -400,12 +393,8 @@ void print_iTXt_chunk_data(FILE *image_file) {
         fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
     }
 
-    bool success = _find_chunk(image_file, 'i', 'T', 'X', 't');
-
-    if (!success) {
-        return;
-    }
-
+    if (!_find_chunk(image_file, 'i', 'T', 'X', 't')) return;
+    
     if (!title_printed) {
         printf("\n\n\n ------------ iTXt chunk data ------------\n");
         title_printed = true;
@@ -457,11 +446,7 @@ void _display_bKGD_color(FILE *image_file, int color_type) {
 void print_bKGD_chunk_data(FILE *image_file, int color_type) {
     fseek(image_file, IHDR_LENGTH, SEEK_SET);
 
-    int success = _find_chunk(image_file, 'b', 'K', 'G', 'D');
-
-    if (!success) {
-        return;
-    }
+    if (!_find_chunk(image_file, 'b', 'K', 'G', 'D')) return;
 
     printf("\n\n\n ------------ bKGD chunk data ------------\n");
     _display_bKGD_color(image_file, color_type);
@@ -479,11 +464,7 @@ void print_bKGD_chunk_data(FILE *image_file, int color_type) {
 void print_cHRM_chunk_data(FILE *image_file) {
     // calling this fn right after IHDR, no need for resetting file pointer
 
-    bool success =_find_chunk(image_file, 'c', 'H', 'R', 'M');
-
-    if (!success) {
-        return;
-    }
+    if (!_find_chunk(image_file, 'c', 'H', 'R', 'M')) return;
 
     /* each stored in 4 bytes
     0 -> while point x
