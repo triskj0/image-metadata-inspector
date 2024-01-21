@@ -41,14 +41,21 @@ int main(int argc, char **argv) {
     // read chunk data
     errno_t err = fopen_s(&image_file, path, "rb");
 
-    int color_type = get_print_IHDR_chunk_data(path, image_file);
+    if (err) {
+        printf("[ERROR] file could not be opened.");
+        exit(EXIT_FAILURE);
+    }
+
+    int color_type = get_print_IHDR_chunk_data(image_file);
+    print_cHRM_chunk_data(image_file);
     print_PLTE_chunk_data(image_file);
     print_bKGD_chunk_data(image_file, color_type);
     print_tEXt_chunk_data(image_file);
     print_iTXt_chunk_data(image_file);
 
-
     fclose(image_file);
+    printf("\n\n");
+
     return EXIT_SUCCESS;
 }
 

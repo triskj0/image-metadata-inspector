@@ -81,7 +81,60 @@ char *get_last_change_date(const char *path) {
     char *date = malloc(26 * sizeof(char));
     errno_t err = ctime_s(date, 26*sizeof(char), &time_t_date);
 
+    if (err) {
+        printf("[ERROR] an error occured while executing the ctime_s function.");
+        exit(EXIT_FAILURE);
+    }    
+
     return date;
+}
+
+
+bool _find_chunk(FILE *image_file, char name_char_0, char name_char_1, char name_char_2, char name_char_3) {
+    /* attempts to find a 4-character chunk name, stops at the last character of the name */
+    char c0, c1, c2, c3;
+
+    while ((c0 = fgetc(image_file)) != EOF) {
+        if (c0 == name_char_0) {
+            c1 = fgetc(image_file);
+            c2 = fgetc(image_file);
+            c3 = fgetc(image_file);
+
+            if (c1 == name_char_1 && c2 == name_char_2 && c3 == name_char_3) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+
+int _get_4_byte_int(FILE *image_file) {
+    int c;
+    int total = 0;
+
+    for (int i = 4; i > 0; i--) {
+        c = fgetc(image_file);
+
+        switch (i) {
+            case 4:
+                total += c * 256 * 256 * 256;
+                break;
+
+            case 3:
+                total += c * 256 * 256;
+                break;
+
+            case 2:
+                total += c * 256;
+                break;
+
+            case 1:
+                total += c;
+        }
+    }
+    return total;
 }
 
 
@@ -92,10 +145,8 @@ char *get_last_change_date(const char *path) {
  *
  * *********************/
 
-int get_print_IHDR_chunk_data(const char *path, FILE *image_file) {
-    int c;
-    int index = 0;
-    int length, width, height, bit_depth, color_type, compression_method, filter_method, interlace_method;
+int get_print_IHDR_chunk_data(FILE *image_file) {
+    int width, height, bit_depth, color_type, compression_method, filter_method, interlace_method;
 
     // skip png signature bytes + 4 length bytes + 4 chunk type (IHDR) bytes 
     fseek(image_file, SIGNATURE_END_INDEX+8, SEEK_CUR);
@@ -145,69 +196,28 @@ int get_print_IHDR_chunk_data(const char *path, FILE *image_file) {
  * ************************/
 
 void _get_PLTE_data(FILE *image_file) {
-    int c, red_value, green_value, blue_value;
     int length = 0;
-    int number_of_color_examples;
 
     // 4 bytes before "PLTE" are its length
     fseek(image_file, -8, SEEK_CUR);
 
-    for (int i = 4; i > 0; i --) {
-        c = fgetc(image_file);
+    length = _get_4_byte_int(image_file);
 
-        switch (i) {
-            case 4:
-                length += c * 256 * 256 * 256;
-                break;
-
-            case 3:
-                length += c * 256 * 256;
-                break;
-
-            case 2:
-                length += c * 256;
-                break;
-
-            case 1:
-                length += c;
-        }
-    }
-
-    printf("\npalette length:\t\t%d", length);
-    printf("\nnumber of colors:\t%d", length/3);
+    printf("palette length:\t\t%d\n", length);
+    printf("number of colors:\t%d\n", length/3);
 }
 
 
 void print_PLTE_chunk_data(FILE *image_file) {
-    int c, next_c0, next_c1, next_c2;
-    int bytes_moved = 0;
-
-    while ((c = fgetc(image_file)) != EOF) {
-        if (c == 'I') { // must be before IDAT
-            next_c0 = fgetc(image_file);
-            next_c1 = fgetc(image_file);
-            next_c2 = fgetc(image_file);
-
-            if (next_c0 == 'D' && next_c1 == 'A' && next_c2 == 'T') {
-                break;
-            } else {
-                fseek(image_file, 3, SEEK_CUR);
-                continue;
-            }
-        }
-
-        if (c == 'P') {
-            next_c0 = fgetc(image_file);
-            next_c1 = fgetc(image_file);
-            next_c2 = fgetc(image_file);
-
-            if (next_c0 == 'L' && next_c1 == 'T' && next_c2 == 'E') {
-                printf("\n\n ------------ PLTE chunk data ------------ ");
-                _get_PLTE_data(image_file);
-                return;
-            }
-        }
+    fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
+    bool success = _find_chunk(image_file, 'P', 'L', 'T', 'E');
+    
+    if (!success) {
+        return;
     }
+
+    printf("\n\n ------------ PLTE chunk data ------------\n");
+    _get_PLTE_data(image_file);
 }
 
 
@@ -225,6 +235,7 @@ void _print_text_element(FILE *image_file, int length) {
         c = fgetc(image_file);
         putchar(c);
     }
+    putchar('\n');
 }
 
 
@@ -240,7 +251,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
      *      Warning 
      */ 
 
-    int first_char, c, c2, c3, length;
+    int first_char, c2, c3, length;
 
     fseek(image_file, -5, SEEK_CUR); // the byte before "tEXt" stores its length
     length = fgetc(image_file);
@@ -251,7 +262,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
 
     switch (first_char) {
         case 'T':
-            printf("\ntitle:\t\t\t");
+            printf("title:\t\t\t");
 
             // go forward -number of remaining characters in the keyword- + 1 for a null character
             fseek(image_file, 5, SEEK_CUR); 
@@ -261,7 +272,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
             break;
 
         case 'A':
-            printf("\nauthor:\t\t\t");
+            printf("author:\t\t\t");
             fseek(image_file, 6, SEEK_CUR);
             length -= 7;
 
@@ -270,7 +281,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
 
         case 'D':
             if ((c2 = fgetc(image_file)) == 'e') { 
-                printf("\ndescription:\t\t");
+                printf("description:\t\t");
                 fseek(image_file, 10, SEEK_CUR);
                 length -= 12;
 
@@ -278,7 +289,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
                 break;
             }
 
-            printf("\ndisclaimer:\t\t");
+            printf("disclaimer:\t\t");
             fseek(image_file, 9, SEEK_CUR);
             length -= 11;
 
@@ -289,7 +300,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
             c2 = fgetc(image_file);
 
             if (c2 == 'r') {
-                printf("\ncreation time:\t\t");
+                printf("creation time:\t\t");
                 fseek(image_file, 11, SEEK_CUR);
                 length -= 13;
 
@@ -300,7 +311,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
             c3 = fgetc(image_file);
 
             if (c3 == 'p') {
-                printf("\ncopyright:\t\t");
+                printf("copyright:\t\t");
                 fseek(image_file, 7, SEEK_CUR);
                 length -= 10;
 
@@ -308,7 +319,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
                 break;
             }
 
-            printf("\ncomment:\t\t");
+            printf("comment:\t\t");
             fseek(image_file, 5, SEEK_CUR);
             length -= 8;
 
@@ -320,7 +331,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
             c3 = fgetc(image_file);
             
             if (c3 == 'u') {
-                printf("\nsource:\t\t\t");
+                printf("source:\t\t\t");
                 fseek(image_file, 4, SEEK_CUR);
                 length -= 7;
 
@@ -328,7 +339,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
                 break;
             }
 
-            printf("\nsoftware:\t\t");
+            printf("software:\t\t");
             fseek(image_file, 6, SEEK_CUR);
             length -= 9;
 
@@ -337,7 +348,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
 
 
         case 'W':
-            printf("\nwarning:\t\t\t");
+            printf("warning:\t\t\t");
             fseek(image_file, 7, SEEK_CUR);
             length -= 8;
 
@@ -348,33 +359,28 @@ void _parse_tEXt_chunk(FILE *image_file) {
 
 
 void print_tEXt_chunk_data(FILE *image_file) {
-    int c, next_c0, next_c1, next_c2;
     static bool title_printed = false;
 
     /* tEXt has no ordering constraints,
     better look for it from the start of the file */
 
-    if (!title_printed)
-        fseek(image_file, SIGNATURE_END_INDEX, SEEK_SET);
-
-    while ((c = fgetc(image_file)) != EOF) {
-        if (c == 't') {
-            next_c0 = fgetc(image_file);
-            next_c1 = fgetc(image_file);
-            next_c2 = fgetc(image_file);
-
-            if (next_c0 == 'E' && next_c1 == 'X' && next_c2 == 't') {
-                if (!title_printed) {
-                    printf("\n\n ------------ tEXt chunk data ------------ ");
-                    title_printed = true;
-                }
-                _parse_tEXt_chunk(image_file);
-                print_tEXt_chunk_data(image_file);
-                break;
-            }
-            fseek(image_file, -3, SEEK_CUR);
-        }
+    if (!title_printed) {
+        fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
     }
+
+    bool success = _find_chunk(image_file, 't', 'E', 'X', 't');
+
+    if (!success) {
+        return;
+    }
+
+    if (!title_printed) {
+        printf("\n\n ------------ tEXt chunk data ------------\n");
+        title_printed = true;
+    }
+
+    _parse_tEXt_chunk(image_file);
+    print_tEXt_chunk_data(image_file);
 }
 
 
@@ -386,40 +392,32 @@ void print_tEXt_chunk_data(FILE *image_file) {
  * *********************/
 
 void print_iTXt_chunk_data(FILE *image_file) {
-    int c, next_c0, next_c1, next_c2, length; 
     static bool title_printed = false;
 
-    /* no ordering constraints here either,
-     so move cursor to the start of the file */
+    /* same as with tEXt, no ordering constraints */
 
-    if (!title_printed)
-        fseek(image_file, SIGNATURE_END_INDEX, SEEK_SET);
-    
-    while ((c = fgetc(image_file)) != EOF) {
-        if (c == 'i') {
-            next_c0 = fgetc(image_file);
-            next_c1 = fgetc(image_file);
-            next_c2 = fgetc(image_file);
-
-            if (next_c0 == 'T' && next_c1 == 'X' && next_c2 == 't') {
-                if (!title_printed) {
-                    printf("\n\n\n\n ------------ iTXt chunk data ------------ ");
-                    title_printed = true;
-                }
-                
-                fseek(image_file, -5, SEEK_CUR);
-                length = fgetc(image_file);
-                fseek(image_file, 5, SEEK_CUR);
-
-                printf("\niTXt contents:\t\t");
-                _print_text_element(image_file, length);
-                
-                break;
-            }
-
-            fseek(image_file, -3, SEEK_CUR);
-        }
+    if (!title_printed) {
+        fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
     }
+
+    bool success = _find_chunk(image_file, 'i', 'T', 'X', 't');
+
+    if (!success) {
+        return;
+    }
+
+    if (!title_printed) {
+        printf("\n\n\n ------------ iTXt chunk data ------------\n");
+        title_printed = true;
+    }
+    
+    fseek(image_file, -5, SEEK_CUR);
+    int length = fgetc(image_file);
+    fseek(image_file, 4, SEEK_CUR);
+
+    printf("iTXt data:\t\t");
+    _print_text_element(image_file, length);
+    print_iTXt_chunk_data(image_file);
 }
 
 
@@ -439,7 +437,7 @@ void _display_bKGD_color(FILE *image_file, int color_type) {
         case 0: case 4: // grayscale with/without alpha => 2 bytes
             fseek(image_file, 1, SEEK_CUR);
             byte0 = fgetc(image_file);
-            printf("\ncolor value:\t\t%d", byte0);
+            printf("color value:\t\t%d\n", byte0);
             break;
         
         case 2: case 6: // truecolor, with/without alpha => 3 * 2 bytes
@@ -450,7 +448,7 @@ void _display_bKGD_color(FILE *image_file, int color_type) {
             fseek(image_file, 1, SEEK_CUR);
             byte2 = fgetc(image_file);
 
-            printf("\nbackground color value:\t[%d, %d, %d]", byte0, byte1, byte2);
+            printf("background color value:\t[%d, %d, %d]\n", byte0, byte1, byte2);
             break;
     }
 }
@@ -459,20 +457,60 @@ void _display_bKGD_color(FILE *image_file, int color_type) {
 void print_bKGD_chunk_data(FILE *image_file, int color_type) {
     fseek(image_file, IHDR_LENGTH, SEEK_SET);
 
-    int c, next_c0, next_c1, next_c2;
+    int success = _find_chunk(image_file, 'b', 'K', 'G', 'D');
 
-    while ((c = fgetc(image_file)) != EOF) {
-        if (c == 'b') {
-            next_c0 = fgetc(image_file);
-            next_c1 = fgetc(image_file);
-            next_c2 = fgetc(image_file);
-
-            if (next_c0 == 'K' && next_c1 == 'G' && next_c2 == 'D') {
-                printf("\n\n ------------ bKGD chunk data ------------ ");
-                _display_bKGD_color(image_file, color_type);
-                return;
-            }
-        }
+    if (!success) {
+        return;
     }
+
+    printf("\n\n\n ------------ bKGD chunk data ------------\n");
+    _display_bKGD_color(image_file, color_type);
+}
+
+
+
+ /* *********************
+ *
+ *      cHRM chunk
+ *    (chromaticities)
+ *
+ * *********************/
+
+void print_cHRM_chunk_data(FILE *image_file) {
+    // calling this fn right after IHDR, no need for resetting file pointer
+
+    bool success =_find_chunk(image_file, 'c', 'H', 'R', 'M');
+
+    if (!success) {
+        return;
+    }
+
+    /* each stored in 4 bytes
+    0 -> while point x
+    1 -> while point y
+    2 -> red x
+    3 -> red y
+    4 -> green x
+    5 -> green y
+    6 -> blue x
+    7 -> blue y
+    */
+    int NUM_ITEMS = 8;
+    int chromaticities[NUM_ITEMS];
+
+    for (int i = 0; i < NUM_ITEMS; i++) {
+        chromaticities[i] = _get_4_byte_int(image_file);
+    }
+
+    printf("\n\n ------------ cHRM chunk data ------------\n");
+
+    printf("while point x:\t\t%d\n", chromaticities[0]);
+    printf("while point y:\t\t%d\n", chromaticities[1]);
+    printf("red x:\t\t\t%d\n", chromaticities[2]);
+    printf("red y:\t\t\t%d\n", chromaticities[3]);
+    printf("green x:\t\t%d\n", chromaticities[4]);
+    printf("green y:\t\t%d\n", chromaticities[5]);
+    printf("blue x:\t\t\t%d\n", chromaticities[6]);
+    printf("blue y:\t\t\t%d\n", chromaticities[7]);
 }
 
