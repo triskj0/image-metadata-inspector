@@ -92,7 +92,7 @@ char *get_last_change_date(const char *path) {
 
 bool _find_chunk(FILE *image_file, char name_char_0, char name_char_1, char name_char_2, char name_char_3) {
     /* attempts to find a 4-character chunk name, stops at the last character of the name */
-    char c0, c1, c2, c3;
+    int c0, c1, c2, c3;
 
     while ((c0 = fgetc(image_file)) != EOF) {
         if (c0 == name_char_0) {
@@ -351,6 +351,12 @@ void _parse_tEXt_chunk(FILE *image_file) {
 
             _print_text_element(image_file, length);
             break;
+        
+        default:
+            putchar(first_char);
+            for (int i = 0; i < length-3; i++) {
+                putchar(fgetc(image_file));
+            }
     }
 }
 
@@ -404,7 +410,7 @@ void print_iTXt_chunk_data(FILE *image_file) {
     int length = fgetc(image_file);
     fseek(image_file, 4, SEEK_CUR);
 
-    printf("iTXt data:\t\t");
+    printf("iTXt data:\t\t\t");
     _print_text_element(image_file, length);
     print_iTXt_chunk_data(image_file);
 }
@@ -495,6 +501,57 @@ void print_cHRM_chunk_data(FILE *image_file) {
     printf("blue y:\t\t\t\t%d\n", chromaticities[7]);
 }
 
+
+
+ /* *********************
+ *
+ *      sBIT chunk
+ *
+ * *********************/
+
+void print_sBIT_chunk_data(FILE *image_file, int color_type) {
+    fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET); 
+    if (!_find_chunk(image_file, 's', 'B', 'I', 'T')) return;
+
+    printf("\n\n\n ------------ sBIT chunk data ------------\n");
+
+    switch (color_type) {
+        case 0:
+            printf("significant bits count:\t");
+            printf("%d\n", fgetc(image_file));
+            break;
+
+        case 2:
+            printf("(number of significant bits to these channels:)\n");
+            printf("red:\t\t\t\t%d\n", fgetc(image_file));
+            printf("green:\t\t\t\t%d\n", fgetc(image_file));
+            printf("blue:\t\t\t\t%d\n", fgetc(image_file));
+
+            break;
+        
+        case 3:
+            printf("(number of bits significant to these components)\n");
+            printf("red:\t\t\t\t%d\n", fgetc(image_file));
+            printf("green:\t\t\t\t%d\n", fgetc(image_file));
+            printf("blue:\t\t\t\t%d\n", fgetc(image_file));
+            break;
+
+        case 4:
+            printf("(number of bits significant in the source data)\n");
+            printf("grayscale:\t\t\t%d\n", fgetc(image_file));
+            printf("alpha:\t\t\t\t%d\n", fgetc(image_file));
+            break;
+
+        case 6:
+            printf("(number of significant bits to these channels:)\n");
+            printf("red:\t\t\t\t%d\n", fgetc(image_file));
+            printf("green:\t\t\t\t%d\n", fgetc(image_file));
+            printf("blue:\t\t\t\t%d\n", fgetc(image_file));
+            printf("alpha:\t\t\t\t%d\n", fgetc(image_file));
+
+            break;
+    }
+}
 
 
  /* *********************

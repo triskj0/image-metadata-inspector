@@ -33,6 +33,8 @@ void print_gAMA_chunk_data(FILE *image_file);
 
 void print_pHYs_chunk_data(FILE *image_file);
 
+void print_sBIT_chunk_data(FILE *image_file, int color_type);
+
 
 #endif // FILE_OPERATIONS_H
 
