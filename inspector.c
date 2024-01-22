@@ -48,10 +48,12 @@ int main(int argc, char **argv) {
 
     int color_type = get_print_IHDR_chunk_data(image_file);
     print_cHRM_chunk_data(image_file);
+    print_gAMA_chunk_data(image_file);
     print_PLTE_chunk_data(image_file);
     print_bKGD_chunk_data(image_file, color_type);
     print_tEXt_chunk_data(image_file);
     print_iTXt_chunk_data(image_file);
+    print_pHYs_chunk_data(image_file);
 
     fclose(image_file);
     printf("\n\n");

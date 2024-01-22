@@ -29,6 +29,10 @@ void print_bKGD_chunk_data(FILE *image_file, int color_type);
 
 void print_cHRM_chunk_data(FILE *image_file);
 
+void print_gAMA_chunk_data(FILE *image_file);
+
+void print_pHYs_chunk_data(FILE *image_file);
+
 
 #endif // FILE_OPERATIONS_H
 

@@ -182,7 +182,7 @@ int get_print_IHDR_chunk_data(FILE *image_file) {
     printf("color type:\t\t%d\n", color_type);
     printf("compression method:\t%d\n", compression_method);
     printf("filter method:\t\t%d\n", filter_method);
-    printf("interlace method:\t%d\n\n", interlace_method);
+    printf("interlace method:\t%d\n", interlace_method);
 
     return color_type;
 }
@@ -213,7 +213,7 @@ void print_PLTE_chunk_data(FILE *image_file) {
 
     if (!_find_chunk(image_file, 'P', 'L', 'T', 'E')) return;
 
-    printf("\n\n ------------ PLTE chunk data ------------\n");
+    printf("\n\n\n ------------ PLTE chunk data ------------\n");
     _get_PLTE_data(image_file);
 }
 
@@ -368,7 +368,7 @@ void print_tEXt_chunk_data(FILE *image_file) {
     if (!_find_chunk(image_file, 't', 'E', 'X', 't')) return;
 
     if (!title_printed) {
-        printf("\n\n ------------ tEXt chunk data ------------\n");
+        printf("\n\n\n ------------ tEXt chunk data ------------\n");
         title_printed = true;
     }
 
@@ -483,7 +483,7 @@ void print_cHRM_chunk_data(FILE *image_file) {
         chromaticities[i] = _get_4_byte_int(image_file);
     }
 
-    printf("\n\n ------------ cHRM chunk data ------------\n");
+    printf("\n\n\n ------------ cHRM chunk data ------------\n");
 
     printf("while point x:\t\t%d\n", chromaticities[0]);
     printf("while point y:\t\t%d\n", chromaticities[1]);
@@ -494,4 +494,41 @@ void print_cHRM_chunk_data(FILE *image_file) {
     printf("blue x:\t\t\t%d\n", chromaticities[6]);
     printf("blue y:\t\t\t%d\n", chromaticities[7]);
 }
+
+
+
+ /* *********************
+ *
+ *  other small chunks
+ *  (gAMA, pHYs)
+ *
+ * *********************/
+
+void print_gAMA_chunk_data(FILE *image_file) {
+    fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
+    
+    if (!_find_chunk(image_file, 'g', 'A', 'M', 'A')) return;
+
+    printf("\n\n\n ------------ gAMA chunk data ------------\n");
+    printf("gamma value:\t\t");
+    printf("%d\n", _get_4_byte_int(image_file));
+}
+
+
+void print_pHYs_chunk_data(FILE *image_file) {
+    fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
+    if (!_find_chunk(image_file, 'p', 'H', 'Y', 's')) return;
+
+    int x_axis_pixels, y_axis_pixels, unit_specifier;
+
+    printf("\n\n\n ------------ pHYs chunk data ------------\n");
+    x_axis_pixels = _get_4_byte_int(image_file);
+    y_axis_pixels = _get_4_byte_int(image_file);
+    unit_specifier = fgetc(image_file);
+
+    printf("unit:\t\t\t%s\n", unit_specifier == 0 ? "unknown (pixel aspect ration only)" : "meter");
+    printf("x axis:\t\t\t%d\n", x_axis_pixels);
+    printf("y axis:\t\t\t%d\n", y_axis_pixels);
+}
+
 
