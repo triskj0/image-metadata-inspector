@@ -20,8 +20,8 @@ int main(int argc, char **argv) {
     filename = get_filename(path);
     extension = get_filetype_extension(filename);
 
-    printf("\n\nfilename:\t\t%s\n", filename);
-    printf("file extension:\t\t%s\n", extension);
+    printf("\n\nfilename:\t\t\t%s\n", filename);
+    printf("file extension:\t\t\t%s\n", extension);
     free(filename);
 
     file_size = get_file_size(path);
@@ -31,10 +31,10 @@ int main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    printf("file size:\t\t%d bytes\n", file_size);
+    printf("file size:\t\t\t%d bytes\n", file_size);
 
     last_change_date = get_last_change_date(path);
-    printf("last change date:\t%s\n", last_change_date);
+    printf("last change date:\t\t%s\n", last_change_date);
     free(last_change_date);
 
 

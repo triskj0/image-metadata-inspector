@@ -176,13 +176,13 @@ int get_print_IHDR_chunk_data(FILE *image_file) {
     interlace_method = fgetc(image_file);
 
     printf("\n\n ------------ IHDR chunk data ------------ \n");
-    printf("width:\t\t\t%d\n", width);
-    printf("height:\t\t\t%d\n", height);
-    printf("bit depth:\t\t%d\n", bit_depth);
-    printf("color type:\t\t%d\n", color_type);
-    printf("compression method:\t%d\n", compression_method);
-    printf("filter method:\t\t%d\n", filter_method);
-    printf("interlace method:\t%d\n", interlace_method);
+    printf("width:\t\t\t\t%d\n", width);
+    printf("height:\t\t\t\t%d\n", height);
+    printf("bit depth:\t\t\t%d\n", bit_depth);
+    printf("color type:\t\t\t%d\n", color_type);
+    printf("compression method:\t\t%d\n", compression_method);
+    printf("filter method:\t\t\t%d\n", filter_method);
+    printf("interlace method:\t\t%d\n", interlace_method);
 
     return color_type;
 }
@@ -203,8 +203,8 @@ void _get_PLTE_data(FILE *image_file) {
 
     length = _get_4_byte_int(image_file);
 
-    printf("palette length:\t\t%d\n", length);
-    printf("number of colors:\t%d\n", length/3);
+    printf("palette length:\t\t\t%d\n", length);
+    printf("number of colors:\t\t%d\n", length/3);
 }
 
 
@@ -259,7 +259,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
 
     switch (first_char) {
         case 'T':
-            printf("title:\t\t\t");
+            printf("title:\t\t\t\t");
 
             // go forward -number of remaining characters in the keyword- + 1 for a null character
             fseek(image_file, 5, SEEK_CUR); 
@@ -269,7 +269,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
             break;
 
         case 'A':
-            printf("author:\t\t\t");
+            printf("author:\t\t\t\t");
             fseek(image_file, 6, SEEK_CUR);
             length -= 7;
 
@@ -278,7 +278,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
 
         case 'D':
             if ((c2 = fgetc(image_file)) == 'e') { 
-                printf("description:\t\t");
+                printf("description:\t\t\t");
                 fseek(image_file, 10, SEEK_CUR);
                 length -= 12;
 
@@ -286,7 +286,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
                 break;
             }
 
-            printf("disclaimer:\t\t");
+            printf("disclaimer:\t\t\t");
             fseek(image_file, 9, SEEK_CUR);
             length -= 11;
 
@@ -297,7 +297,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
             c2 = fgetc(image_file);
 
             if (c2 == 'r') {
-                printf("creation time:\t\t");
+                printf("creation time:\t\t\t");
                 fseek(image_file, 11, SEEK_CUR);
                 length -= 13;
 
@@ -308,7 +308,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
             c3 = fgetc(image_file);
 
             if (c3 == 'p') {
-                printf("copyright:\t\t");
+                printf("copyright:\t\t\t");
                 fseek(image_file, 7, SEEK_CUR);
                 length -= 10;
 
@@ -316,7 +316,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
                 break;
             }
 
-            printf("comment:\t\t");
+            printf("comment:\t\t\t");
             fseek(image_file, 5, SEEK_CUR);
             length -= 8;
 
@@ -328,7 +328,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
             c3 = fgetc(image_file);
             
             if (c3 == 'u') {
-                printf("source:\t\t\t");
+                printf("source:\t\t\t\t");
                 fseek(image_file, 4, SEEK_CUR);
                 length -= 7;
 
@@ -336,7 +336,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
                 break;
             }
 
-            printf("software:\t\t");
+            printf("software:\t\t\t");
             fseek(image_file, 6, SEEK_CUR);
             length -= 9;
 
@@ -426,7 +426,7 @@ void _display_bKGD_color(FILE *image_file, int color_type) {
         case 0: case 4: // grayscale with/without alpha => 2 bytes
             fseek(image_file, 1, SEEK_CUR);
             byte0 = fgetc(image_file);
-            printf("color value:\t\t%d\n", byte0);
+            printf("color value:\t\t\t%d\n", byte0);
             break;
         
         case 2: case 6: // truecolor, with/without alpha => 3 * 2 bytes
@@ -437,7 +437,7 @@ void _display_bKGD_color(FILE *image_file, int color_type) {
             fseek(image_file, 1, SEEK_CUR);
             byte2 = fgetc(image_file);
 
-            printf("background color value:\t[%d, %d, %d]\n", byte0, byte1, byte2);
+            printf("background color value:\t\t[%d, %d, %d]\n", byte0, byte1, byte2);
             break;
     }
 }
@@ -485,14 +485,14 @@ void print_cHRM_chunk_data(FILE *image_file) {
 
     printf("\n\n\n ------------ cHRM chunk data ------------\n");
 
-    printf("while point x:\t\t%d\n", chromaticities[0]);
-    printf("while point y:\t\t%d\n", chromaticities[1]);
-    printf("red x:\t\t\t%d\n", chromaticities[2]);
-    printf("red y:\t\t\t%d\n", chromaticities[3]);
-    printf("green x:\t\t%d\n", chromaticities[4]);
-    printf("green y:\t\t%d\n", chromaticities[5]);
-    printf("blue x:\t\t\t%d\n", chromaticities[6]);
-    printf("blue y:\t\t\t%d\n", chromaticities[7]);
+    printf("while point x:\t\t\t%d\n", chromaticities[0]);
+    printf("while point y:\t\t\t%d\n", chromaticities[1]);
+    printf("red x:\t\t\t\t%d\n", chromaticities[2]);
+    printf("red y:\t\t\t\t%d\n", chromaticities[3]);
+    printf("green x:\t\t\t%d\n", chromaticities[4]);
+    printf("green y:\t\t\t%d\n", chromaticities[5]);
+    printf("blue x:\t\t\t\t%d\n", chromaticities[6]);
+    printf("blue y:\t\t\t\t%d\n", chromaticities[7]);
 }
 
 
@@ -510,7 +510,7 @@ void print_gAMA_chunk_data(FILE *image_file) {
     if (!_find_chunk(image_file, 'g', 'A', 'M', 'A')) return;
 
     printf("\n\n\n ------------ gAMA chunk data ------------\n");
-    printf("gamma value:\t\t");
+    printf("gamma value:\t\t\t");
     printf("%d\n", _get_4_byte_int(image_file));
 }
 
@@ -526,9 +526,9 @@ void print_pHYs_chunk_data(FILE *image_file) {
     y_axis_pixels = _get_4_byte_int(image_file);
     unit_specifier = fgetc(image_file);
 
-    printf("unit:\t\t\t%s\n", unit_specifier == 0 ? "unknown (pixel aspect ration only)" : "meter");
-    printf("x axis:\t\t\t%d\n", x_axis_pixels);
-    printf("y axis:\t\t\t%d\n", y_axis_pixels);
+    printf("unit:\t\t\t\t%s\n", unit_specifier == 0 ? "unknown (pixel aspect ration only)" : "meter");
+    printf("x axis:\t\t\t\t%d\n", x_axis_pixels);
+    printf("y axis:\t\t\t\t%d\n", y_axis_pixels);
 }
 
 
