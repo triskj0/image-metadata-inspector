@@ -525,7 +525,7 @@ void print_sBIT_chunk_data(FILE *image_file, int color_type) {
             break;
 
         case 2:
-            printf("(number of significant bits to these channels:)\n");
+            printf("(number of significant bits to these channels)\n");
             printf("red:\t\t\t\t%d\n", fgetc(image_file));
             printf("green:\t\t\t\t%d\n", fgetc(image_file));
             printf("blue:\t\t\t\t%d\n", fgetc(image_file));
@@ -546,12 +546,11 @@ void print_sBIT_chunk_data(FILE *image_file, int color_type) {
             break;
 
         case 6:
-            printf("(number of significant bits to these channels:)\n");
+            printf("(number of significant bits to these channels)\n");
             printf("red:\t\t\t\t%d\n", fgetc(image_file));
             printf("green:\t\t\t\t%d\n", fgetc(image_file));
             printf("blue:\t\t\t\t%d\n", fgetc(image_file));
             printf("alpha:\t\t\t\t%d\n", fgetc(image_file));
-
             break;
     }
 }
@@ -602,10 +601,55 @@ void print_tRNS_chunk_data(FILE *image_file, int color_type) {
 
 
 
+ /* ***********************
+ *
+ *  common private chunks
+ *
+ * ***********************/
+
+void search_for_common_private_chunks(FILE *image_file) {
+    char *private_chunks_names[] = {
+        "prVW",
+        "mkBF",
+        "mkBS",
+        "mkBT",
+        "mkTS"
+    };
+
+    int names_array_length = sizeof(private_chunks_names)/sizeof(char *);
+    int c0, c1, c2, c3;
+    bool title_printed = false;
+
+    for (int i = 0; i < names_array_length; i++) {
+        fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
+
+        c0 = private_chunks_names[i][0];
+        c1 = private_chunks_names[i][1];
+        c2 = private_chunks_names[i][2];
+        c3 = private_chunks_names[i][3];
+
+        if (_find_chunk(image_file, c0, c1, c2, c3)) {
+            if (!title_printed) {
+                printf("\n\n\n ------------ private chunks data ------------\n");
+                title_printed = true;
+            }
+
+            // check if there are more occurrences
+            if (_find_chunk(image_file, c0, c1, c2, c3)) {
+                printf("[%s] - multiple private chunks of type %s were found\n", private_chunks_names[i], private_chunks_names[i]);
+                continue;
+            }
+
+            printf("[%s] - one chunk of type %s was found\n", private_chunks_names[i], private_chunks_names[i]);
+        }
+    }
+}
+
+
  /* *********************
  *
  *  other small chunks
- *     (gAMA, pHYs, tIME)
+ *  (gAMA, pHYs, tIME)
  *
  * *********************/
 
