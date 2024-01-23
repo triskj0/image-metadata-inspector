@@ -37,6 +37,8 @@ void print_sBIT_chunk_data(FILE *image_file, int color_type);
 
 void print_tRNS_chunk_data(FILE *image_file, int color_type);
 
+void print_tIME_chunk_data(FILE *image_file);
+
 
 #endif // FILE_OPERATIONS_H
 

@@ -605,7 +605,7 @@ void print_tRNS_chunk_data(FILE *image_file, int color_type) {
  /* *********************
  *
  *  other small chunks
- *     (gAMA, pHYs)
+ *     (gAMA, pHYs, tIME)
  *
  * *********************/
 
@@ -636,4 +636,23 @@ void print_pHYs_chunk_data(FILE *image_file) {
     printf("y axis:\t\t\t\t%d\n", y_axis_pixels);
 }
 
+
+void print_tIME_chunk_data(FILE *image_file) {
+    fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
+    if (!_find_chunk(image_file, 't', 'I', 'M', 'E')) return;
+
+    int year, month, day, hour, minute, second;
+
+    year = fgetc(image_file) * 256;
+    year += fgetc(image_file);
+
+    month = fgetc(image_file);
+    day = fgetc(image_file);
+    hour = fgetc(image_file);
+    minute = fgetc(image_file);
+    second = fgetc(image_file);
+
+    printf("\n\n\n ------------ tIME chunk data ------------\n");
+    printf("last modification date (Y/M/D/H/M/S): %d/%d/%d/%d/%d/%d\n", year, month, day, hour, minute, second);
+}
 
