@@ -103,6 +103,9 @@ bool _find_chunk(FILE *image_file, char name_char_0, char name_char_1, char name
             if (c1 == name_char_1 && c2 == name_char_2 && c3 == name_char_3) {
                 return true;
             }
+            else {
+                fseek(image_file, -3, SEEK_CUR);
+            }
         }
     }
 
@@ -554,10 +557,55 @@ void print_sBIT_chunk_data(FILE *image_file, int color_type) {
 }
 
 
+
+ /* *********************
+ *
+ *      tRNS chunk
+ *
+ * *********************/
+
+void print_tRNS_chunk_data(FILE *image_file, int color_type) {
+    fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
+    if (!_find_chunk(image_file, 't', 'R', 'N', 'S')) return;
+
+    int c0, c1;
+    printf("\n\n\n ------------ tRNS chunk data ------------\n");
+
+    switch (color_type) {
+        case 0: // grayscale
+            c0 = fgetc(image_file);
+            c1 = fgetc(image_file);
+            printf("gray level value:\t\t%d\n", c1 + c0 * 256);
+            break;
+
+        case 2: // truecolor 
+            for (int i = 0; i < 3; i++) {
+                c0 = fgetc(image_file);
+                c1 = fgetc(image_file);
+
+                if (i == 0)
+                    printf("red value:\t\t\t%d\n", c1 + c0 * 256);
+
+                else if (i == 1)
+                    printf("green value:\t\t\t%d\n", c1 + c0 * 256);
+
+                else if (i == 2)
+                    printf("blue value:\t\t\t%d\n", c1 + c0 * 256);
+            }
+            break;
+
+        case 3: // indexed color
+            printf("chunk contains alpha values correspondingto each entry in the PLTE chunk\n");
+            break;
+    }
+}
+
+
+
  /* *********************
  *
  *  other small chunks
- *  (gAMA, pHYs)
+ *     (gAMA, pHYs)
  *
  * *********************/
 
@@ -583,7 +631,7 @@ void print_pHYs_chunk_data(FILE *image_file) {
     y_axis_pixels = _get_4_byte_int(image_file);
     unit_specifier = fgetc(image_file);
 
-    printf("unit:\t\t\t\t%s\n", unit_specifier == 0 ? "unknown (pixel aspect ration only)" : "meter");
+    printf("unit:\t\t\t\t%s\n", unit_specifier == 0 ? "unknown (pixel aspect ratio only)" : "meter (pixels per unit)");
     printf("x axis:\t\t\t\t%d\n", x_axis_pixels);
     printf("y axis:\t\t\t\t%d\n", y_axis_pixels);
 }

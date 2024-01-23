@@ -51,6 +51,7 @@ int main(int argc, char **argv) {
     print_gAMA_chunk_data(image_file);
     print_sBIT_chunk_data(image_file, color_type);
     print_PLTE_chunk_data(image_file);
+    print_tRNS_chunk_data(image_file, color_type);
     print_bKGD_chunk_data(image_file, color_type);
     print_tEXt_chunk_data(image_file);
     print_iTXt_chunk_data(image_file);

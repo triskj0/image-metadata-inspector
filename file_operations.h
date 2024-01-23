@@ -35,6 +35,8 @@ void print_pHYs_chunk_data(FILE *image_file);
 
 void print_sBIT_chunk_data(FILE *image_file, int color_type);
 
+void print_tRNS_chunk_data(FILE *image_file, int color_type);
+
 
 #endif // FILE_OPERATIONS_H
 
