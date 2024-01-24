@@ -409,12 +409,45 @@ void print_iTXt_chunk_data(FILE *image_file) {
         title_printed = true;
     }
     
-    fseek(image_file, -5, SEEK_CUR);
-    int length = fgetc(image_file);
+    fseek(image_file, -8, SEEK_CUR);
+    int length = _get_4_byte_int(image_file);
     fseek(image_file, 4, SEEK_CUR);
 
-    printf("iTXt data:\t\t\t");
-    _print_text_element(image_file, length);
+    printf("iTXt data:\n");
+    int i, c;
+    bool newline_found = false;
+
+    // print differently only if it doesn't contain newline characters
+    for (i = 0; i < length; i++) {
+        c = fgetc(image_file);
+
+        if (c == '\n') {
+            newline_found = true;
+            fseek(image_file, -i-1, SEEK_CUR);
+            break;
+        }
+    }
+
+    if (newline_found) {
+        for (int j = 0; j < length; j++) {
+            c = fgetc(image_file);
+            putchar(c);
+        }
+        print_iTXt_chunk_data(image_file);
+        return;
+    }
+
+    fseek(image_file, -i, SEEK_CUR);
+    for (int j = 0; j < length; j++) {
+        c = fgetc(image_file);
+
+        if (c == '>') {
+            printf(">\n");
+            continue;
+        }
+        putchar(c);
+    }
+
     print_iTXt_chunk_data(image_file);
 }
 
@@ -601,7 +634,6 @@ void print_tRNS_chunk_data(FILE *image_file, int color_type) {
 
 
 
-
  /* ********************
  *
  *      eXIf chunk
@@ -676,6 +708,7 @@ void print_eXIf_chunk_data(FILE *image_file) {
         last_char_newline = false;
     }
 }
+
 
 
  /* ***********************
