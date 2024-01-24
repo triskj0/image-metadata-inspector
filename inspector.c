@@ -58,6 +58,7 @@ int main(int argc, char **argv) {
     print_pHYs_chunk_data(image_file);
     print_tIME_chunk_data(image_file);
     search_for_common_private_chunks(image_file);
+    print_eXIf_chunk_data(image_file);
 
     fclose(image_file);
     printf("\n\n");

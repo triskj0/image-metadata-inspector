@@ -41,6 +41,8 @@ void print_tIME_chunk_data(FILE *image_file);
 
 void search_for_common_private_chunks(FILE *image_file);
 
+void print_eXIf_chunk_data(FILE *image_file);
+
 
 #endif // FILE_OPERATIONS_H
 

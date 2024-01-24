@@ -601,6 +601,83 @@ void print_tRNS_chunk_data(FILE *image_file, int color_type) {
 
 
 
+
+ /* ********************
+ *
+ *      eXIf chunk
+ *
+ * ********************/
+
+void print_eXIf_chunk_data(FILE *image_file) {
+    fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
+
+    if (!_find_chunk(image_file, 'e', 'X', 'I', 'f')) return;
+    int i, c, length;
+    bool last_char_newline = true;
+    bool brace_found = false;
+
+    printf("\n\n\n ------------ eXIf chunk data ------------\n");
+    fseek(image_file, -8, SEEK_CUR);
+
+    length = _get_4_byte_int(image_file);
+
+    // first find the '{' character
+    for (i = 0; i < length; i++) {
+        c = fgetc(image_file);
+
+        if (c == '{') {
+            brace_found = true;
+            break;
+        }
+    }
+
+    if (!brace_found) {
+        printf("couldn't decode eXIf chunk data\n");
+        return;
+    }
+
+    bool sub_array = false;
+
+    for (; i < length+1; i++) {
+        c = fgetc(image_file);
+
+        if (c == '{') {
+            sub_array = true;
+        }
+
+        if (c == '}' && sub_array == true) {
+            sub_array = false;
+        }
+
+        if (c == ',' && sub_array == false) {
+            putchar('\n');
+            last_char_newline = true;
+            continue;
+        }
+
+        if (c == ':' && fgetc(image_file) != ' ') {
+            printf(": ");
+            last_char_newline = false;
+            fseek(image_file, -1, SEEK_CUR);
+
+            continue;
+        }
+
+        if (c == '"') {
+            if (last_char_newline)
+                continue;
+
+            putchar(' ');
+            last_char_newline = false;
+            continue;
+        }
+
+        putchar(c);
+        last_char_newline = false;
+    }
+}
+
+
  /* ***********************
  *
  *  common private chunks
@@ -697,6 +774,6 @@ void print_tIME_chunk_data(FILE *image_file) {
     second = fgetc(image_file);
 
     printf("\n\n\n ------------ tIME chunk data ------------\n");
-    printf("last modification date (Y/M/D/H/M/S): %d/%d/%d/%d/%d/%d\n", year, month, day, hour, minute, second);
+    printf("last data modification date: %d/%d/%d/%d/%d/%d (Y/M/D/h/m/s)\n", year, month, day, hour, minute, second);
 }
 
