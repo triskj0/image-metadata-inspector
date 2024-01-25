@@ -636,6 +636,42 @@ void print_tRNS_chunk_data(FILE *image_file, int color_type) {
 
  /* ********************
  *
+ *      sRGB chunk
+ *
+ * ********************/
+
+void print_sRGB_chunk_data(FILE *image_file) {
+    fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
+    if (!_find_chunk(image_file, 's', 'R', 'G', 'B')) return;
+
+    printf("\n\n\n ------------ sRGB chunk data ------------\n");
+    printf("rendering intent: ");
+
+    int c = fgetc(image_file);
+
+    switch (c) {
+        case 0:
+            printf("perceptual");
+            return;
+
+        case 1:
+            printf("relative colorimetric");
+            return;
+
+        case 2:
+            printf("saturation");
+            return;
+
+        case 3:
+            printf("absolute colorimetric");
+            return;
+    }
+}
+
+
+
+ /* ********************
+ *
  *      eXIf chunk
  *
  * ********************/

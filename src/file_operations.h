@@ -39,6 +39,8 @@ void print_tRNS_chunk_data(FILE *image_file, int color_type);
 
 void print_tIME_chunk_data(FILE *image_file);
 
+void print_sRGB_chunk_data(FILE *image_file);
+
 void search_for_common_private_chunks(FILE *image_file);
 
 void print_eXIf_chunk_data(FILE *image_file);

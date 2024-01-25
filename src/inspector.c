@@ -11,7 +11,7 @@ int main(int argc, char **argv) {
     }
 
     const char *path = argv[1];
-    const char *extension;
+    char *extension;
     char *filename;
     int file_size;
     char *last_change_date;
@@ -23,6 +23,7 @@ int main(int argc, char **argv) {
     printf("\n\nfilename:\t\t\t%s\n", filename);
     printf("file extension:\t\t\t%s\n", extension);
     free(filename);
+    free(extension);
 
     file_size = get_file_size(path);
 
@@ -56,9 +57,10 @@ int main(int argc, char **argv) {
     print_tEXt_chunk_data(image_file);
     print_iTXt_chunk_data(image_file);
     print_pHYs_chunk_data(image_file);
+    print_sRGB_chunk_data(image_file);
     print_tIME_chunk_data(image_file);
-    search_for_common_private_chunks(image_file);
     print_eXIf_chunk_data(image_file);
+    search_for_common_private_chunks(image_file);
 
     fclose(image_file);
     printf("\n\n");
