@@ -6,6 +6,9 @@
 #include <stdbool.h>
 #include "file_operations.h"
 
+#define DATE_LENGTH 26
+#define HEX_MULTIPLIER 256
+
 
 // index2 is non-inclusive
 char *_slice_string(const char *str, int index1, int index2) {
@@ -78,8 +81,8 @@ char *get_last_change_date(const char *path) {
     }
 
     time_t time_t_date = file_status.st_mtime;
-    char *date = malloc(26 * sizeof(char));
-    errno_t err = ctime_s(date, 26*sizeof(char), &time_t_date);
+    char *date = malloc(DATE_LENGTH * sizeof(char));
+    errno_t err = ctime_s(date, DATE_LENGTH*sizeof(char), &time_t_date);
 
     if (err) {
         fprintf(stderr, "[ERROR] an error occured while executing the ctime_s function.");
@@ -122,15 +125,14 @@ int _get_4_byte_int(FILE *image_file) {
 
         switch (i) {
             case 4:
-                total += c * 256 * 256 * 256;
+                total += c * HEX_MULTIPLIER * HEX_MULTIPLIER * HEX_MULTIPLIER;
                 break;
 
             case 3:
-                total += c * 256 * 256;
-                break;
+                total += c * HEX_MULTIPLIER * HEX_MULTIPLIER;
 
             case 2:
-                total += c * 256;
+                total += c * HEX_MULTIPLIER;
                 break;
 
             case 1:
@@ -150,25 +152,27 @@ int _get_4_byte_int(FILE *image_file) {
 
 int get_print_IHDR_chunk_data(FILE *image_file) {
     int width, height, bit_depth, color_type, compression_method, filter_method, interlace_method;
+    int width_byte_length = 4;
+    int height_byte_length = 4;
 
     // skip png signature bytes + 4 length bytes + 4 chunk type (IHDR) bytes 
     fseek(image_file, SIGNATURE_END_INDEX+8, SEEK_CUR);
 
     width = 0;
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < width_byte_length; i++) {
         if (width == 0) {
             width = fgetc(image_file);
         } else {
-            width = width * 256 + fgetc(image_file);
+            width = width * HEX_MULTIPLIER + fgetc(image_file);
         }
     }
 
     height = 0;
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < height_byte_length; i++) {
         if (height == 0) {
             height = fgetc(image_file);
         } else {
-            height = height * 256 + fgetc(image_file);
+            height = height * HEX_MULTIPLIER + fgetc(image_file);
         }
     }
 
@@ -202,6 +206,7 @@ void _get_PLTE_data(FILE *image_file) {
     int length = 0;
 
     // 4 bytes before "PLTE" are its length
+    //     => -4 (for each letter in PLTE) + 4 for the length bytes
     fseek(image_file, -8, SEEK_CUR);
 
     length = _get_4_byte_int(image_file);
@@ -607,7 +612,7 @@ void print_tRNS_chunk_data(FILE *image_file, int color_type) {
         case 0: // grayscale
             c0 = fgetc(image_file);
             c1 = fgetc(image_file);
-            printf("gray level value:\t\t%d\n", c1 + c0 * 256);
+            printf("gray level value:\t\t%d\n", c1 + c0 * HEX_MULTIPLIER);
             break;
 
         case 2: // truecolor 
@@ -616,13 +621,13 @@ void print_tRNS_chunk_data(FILE *image_file, int color_type) {
                 c1 = fgetc(image_file);
 
                 if (i == 0)
-                    printf("red value:\t\t\t%d\n", c1 + c0 * 256);
+                    printf("red value:\t\t\t%d\n", c1 + c0 * HEX_MULTIPLIER);
 
                 else if (i == 1)
-                    printf("green value:\t\t\t%d\n", c1 + c0 * 256);
+                    printf("green value:\t\t\t%d\n", c1 + c0 * HEX_MULTIPLIER);
 
                 else if (i == 2)
-                    printf("blue value:\t\t\t%d\n", c1 + c0 * 256);
+                    printf("blue value:\t\t\t%d\n", c1 + c0 * HEX_MULTIPLIER);
             }
             break;
 
@@ -833,7 +838,7 @@ void print_tIME_chunk_data(FILE *image_file) {
 
     int year, month, day, hour, minute, second;
 
-    year = fgetc(image_file) * 256;
+    year = fgetc(image_file) * HEX_MULTIPLIER;
     year += fgetc(image_file);
 
     month = fgetc(image_file);
