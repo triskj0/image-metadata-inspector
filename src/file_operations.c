@@ -6,6 +6,10 @@
 #include <stdbool.h>
 #include "file_operations.h"
 
+#ifdef _WIN32
+#   pragma warning(disable: 4996)
+#endif
+
 #define SIGNATURE_END_INDEX 8
 #define IHDR_LENGTH 13
 #define DATE_LENGTH 26
@@ -87,12 +91,7 @@ char *get_last_change_date(const char *path) {
 
     time_t time_t_date = file_status.st_mtime;
     char *date = malloc(DATE_LENGTH * sizeof(char));
-    int err = ctime_s(date, DATE_LENGTH*sizeof(char), &time_t_date);
-
-    if (err) {
-        fprintf(stderr, "[ERROR] an error occured while executing the ctime_s function.");
-        exit(EXIT_FAILURE);
-    }    
+    date = ctime(&time_t_date);
 
     return date;
 }

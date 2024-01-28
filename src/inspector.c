@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include "file_operations.h"
 
+#ifdef _WIN32
+#   pragma warning(disable: 4996)
+#endif
+
 
 int main(int argc, char **argv) {
     
@@ -15,7 +19,7 @@ int main(int argc, char **argv) {
     char *filename;
     int file_size;
     char *last_change_date;
-    FILE *image_file = NULL;
+    FILE *image_file;
 
     filename = get_filename(path);
     extension = get_filetype_extension(filename);
@@ -40,9 +44,9 @@ int main(int argc, char **argv) {
 
 
     // read chunk data
-    int err = fopen_s(&image_file, path, "rb");
+    image_file = fopen(path, "rb");
 
-    if (err) {
+    if (image_file == NULL) {
         fprintf(stderr, "[ERROR] file could not be opened.");
         exit(EXIT_FAILURE);
     }
