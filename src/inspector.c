@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
 
 
     // read chunk data
-    errno_t err = fopen_s(&image_file, path, "rb");
+    int err = fopen_s(&image_file, path, "rb");
 
     if (err) {
         fprintf(stderr, "[ERROR] file could not be opened.");

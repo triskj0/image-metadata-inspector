@@ -3,9 +3,6 @@
 
 #include <stdio.h>
 
-#define SIGNATURE_END_INDEX 8
-#define IHDR_LENGTH 13
-
 
 char *get_filename(const char *path);
 

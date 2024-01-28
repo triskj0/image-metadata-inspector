@@ -6,8 +6,19 @@
 #include <stdbool.h>
 #include "file_operations.h"
 
+#define SIGNATURE_END_INDEX 8
+#define IHDR_LENGTH 13
 #define DATE_LENGTH 26
 #define HEX_MULTIPLIER 256
+
+#define ITXT_RESOLUTION_UNIT_KW_LENGTH 14
+#define ITXT_RESOLUTION_KW_LENGTH 11
+#define ITXT_ORIENTATION_KW_LENGTH 11
+#define ITXT_IMAGE_LENGTH_KW_LENGTH 11
+#define ITXT_IMAGE_WIDTH_KW_LENGTH 10
+#define ITXT_BITS_PER_SAMPLE_KW_LENGTH 13
+#define ITXT_PHOTOMETRIC_INTERPRETATION_KW_LENGTH 25
+#define ITXT_SAMPLES_PER_PIXEL_KW_LENGTH 15
 
 
 // index2 is non-inclusive
@@ -82,7 +93,7 @@ char *get_last_change_date(const char *path) {
 
     time_t time_t_date = file_status.st_mtime;
     char *date = malloc(DATE_LENGTH * sizeof(char));
-    errno_t err = ctime_s(date, DATE_LENGTH*sizeof(char), &time_t_date);
+    int err = ctime_s(date, DATE_LENGTH*sizeof(char), &time_t_date);
 
     if (err) {
         fprintf(stderr, "[ERROR] an error occured while executing the ctime_s function.");
@@ -398,10 +409,114 @@ void print_tEXt_chunk_data(FILE *image_file) {
  *
  * *********************/
 
+void _print_itxt_keyword_value(FILE *image_file, int keyword_length) {
+    int c;
+
+    fseek(image_file, keyword_length, SEEK_CUR);
+
+    while ((c = fgetc(image_file)) != '<')
+        putchar(c);
+    putchar('\n');
+
+    while ((c = fgetc(image_file)) != '\n') {
+        ;
+    }
+}
+
+void _detect_individual_tiff_keyword(FILE *image_file) {
+    /*
+     tiff metadata keywords:
+        ResolutionUnit
+        XResolution
+        YResolution
+        Orientation
+        ImageWidth
+        ImageLength
+        BitsPerSample
+        PhotometricInterpretation
+        SamplesPerPixel
+     */
+
+    int c = fgetc(image_file);
+
+    switch (c) {
+        case 'R':
+            printf("Resolution Unit:\t\t");
+            _print_itxt_keyword_value(image_file, ITXT_RESOLUTION_UNIT_KW_LENGTH);
+            break;
+
+        case 'X': case 'Y':
+            (c == 'X') ? printf("X Resolution:\t\t\t") : printf("Y Resolution:\t\t\t");
+            _print_itxt_keyword_value(image_file, ITXT_RESOLUTION_KW_LENGTH);
+            break;
+
+        case 'O':
+            printf("Orientation:\t\t\t");
+            _print_itxt_keyword_value(image_file, ITXT_ORIENTATION_KW_LENGTH);
+            break;
+
+        case 'I': // either ImageWidth or ImageLength
+            fseek(image_file, 4, SEEK_CUR);
+
+            if (fgetc(image_file) == 'W') {
+                printf("Image Width:\t\t\t");
+                fseek(image_file, -5, SEEK_CUR);
+                _print_itxt_keyword_value(image_file, ITXT_IMAGE_WIDTH_KW_LENGTH);
+                break;
+            }
+
+            printf("Image Length:\t\t\t");
+            fseek(image_file, -5, SEEK_CUR);
+            _print_itxt_keyword_value(image_file, ITXT_IMAGE_LENGTH_KW_LENGTH);
+            break;
+
+        case 'P':
+            printf("Photometric interpretation:\t");
+            _print_itxt_keyword_value(image_file, ITXT_PHOTOMETRIC_INTERPRETATION_KW_LENGTH);
+            break;
+
+        case 'S':
+            printf("Samples per pixel:\t\t");
+            _print_itxt_keyword_value(image_file, ITXT_SAMPLES_PER_PIXEL_KW_LENGTH);
+            break;
+    }
+
+    return;
+}
+
+
+void _print_tiff_metadata(FILE *image_file, int chunk_length) {
+    int i, c0, c, c2, c3, c4;
+
+    for (i = 0; i < chunk_length; i++) {
+        c = fgetc(image_file);
+
+        if (c == '<' || c == '>' || c == ' ' || c == '\t' || c == '\n' || c == '/') continue;
+
+        if (c == 't') {
+            fseek(image_file, -2, SEEK_CUR);
+            c0 = fgetc(image_file);
+            fseek(image_file, 1, SEEK_CUR);
+
+            c2 = fgetc(image_file);
+            c3 = fgetc(image_file);
+            c4 = fgetc(image_file);
+
+            if (c0 == '<' && c2 == 'i' && c3 == 'f' && c4 == 'f') {
+                fseek(image_file, 1, SEEK_CUR); // skip ':'
+                _detect_individual_tiff_keyword(image_file);
+            }
+            else {
+                fseek(image_file, -3, SEEK_CUR);
+            }
+        }
+    }
+
+}
+
+
 void print_iTXt_chunk_data(FILE *image_file) {
     static bool title_printed = false;
-
-    /* same as with tEXt, no ordering constraints */
 
     if (!title_printed) {
         fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
@@ -418,43 +533,9 @@ void print_iTXt_chunk_data(FILE *image_file) {
     int length = _get_4_byte_int(image_file);
     fseek(image_file, 4, SEEK_CUR);
 
-    printf("iTXt data:\n");
-    int i, c;
-    bool newline_found = false;
-
-    // print differently only if it doesn't contain newline characters
-    for (i = 0; i < length; i++) {
-        c = fgetc(image_file);
-
-        if (c == '\n') {
-            newline_found = true;
-            fseek(image_file, -i-1, SEEK_CUR);
-            break;
-        }
-    }
-
-    if (newline_found) {
-        for (int j = 0; j < length; j++) {
-            c = fgetc(image_file);
-            putchar(c);
-        }
-        print_iTXt_chunk_data(image_file);
-        return;
-    }
-
-    fseek(image_file, -i, SEEK_CUR);
-    for (int j = 0; j < length; j++) {
-        c = fgetc(image_file);
-
-        if (c == '>') {
-            printf(">\n");
-            continue;
-        }
-        putchar(c);
-    }
-
-    print_iTXt_chunk_data(image_file);
+    _print_tiff_metadata(image_file, length);
 }
+
 
 
 
@@ -781,7 +862,7 @@ void search_for_common_private_chunks(FILE *image_file) {
 
         if (_find_chunk(image_file, c0, c1, c2, c3)) {
             if (!title_printed) {
-                printf("\n\n\n ------------ private chunks data ------------\n");
+                printf("\n\n\n ------------ private chunks ------------\n");
                 title_printed = true;
             }
 
