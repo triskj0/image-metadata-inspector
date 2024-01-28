@@ -134,6 +134,7 @@ int _get_4_byte_int(FILE *image_file) {
 
             case 3:
                 total += c * HEX_MULTIPLIER * HEX_MULTIPLIER;
+                break;
 
             case 2:
                 total += c * HEX_MULTIPLIER;
