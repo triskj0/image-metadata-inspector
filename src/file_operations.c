@@ -15,6 +15,7 @@
 #define DATE_LENGTH 26
 #define HEX_MULTIPLIER 256
 
+#define NUM_TEXT_KEYWORDS 10
 #define TIFF_NUM_KEYWORDS 9
 #define TIFF_IMAGE_LENGTH_KW_LENGTH 11
 
@@ -260,127 +261,21 @@ void _print_text_element(FILE *image_file, int length) {
 
 
 void _parse_tEXt_chunk(FILE *image_file) {
+    int c, length;
+    int iteration = 0;
 
-    /*
-     * all available keywords:
-     *      Title,
-     *      Author,
-     *      Description, Disclaimer,
-     *      Copyright, CreationTime, Comment,
-     *      Software, Source,
-     *      Warning 
-     */ 
-
-    int first_char, c2, c3, length;
-
-    fseek(image_file, -5, SEEK_CUR); // the byte before "tEXt" stores its length
+    fseek(image_file, -5, SEEK_CUR);
     length = fgetc(image_file);
-
     fseek(image_file, 4, SEEK_CUR);
-    first_char = fgetc(image_file);
 
-
-    switch (first_char) {
-        case 'T':
-            printf("title:\t\t\t\t");
-
-            // go forward -number of remaining characters in the keyword- + 1 for a null character
-            fseek(image_file, 5, SEEK_CUR); 
-            length -= 6; // length of "Title" + 1 for a null character
-
-            _print_text_element(image_file, length);
-            break;
-
-        case 'A':
-            printf("author:\t\t\t\t");
-            fseek(image_file, 6, SEEK_CUR);
-            length -= 7;
-
-            _print_text_element(image_file, length);
-            break;
-
-        case 'D':
-            if ((c2 = fgetc(image_file)) == 'e') { 
-                printf("description:\t\t\t");
-                fseek(image_file, 10, SEEK_CUR);
-                length -= 12;
-
-                _print_text_element(image_file, length);
-                break;
-            }
-
-            printf("disclaimer:\t\t\t");
-            fseek(image_file, 9, SEEK_CUR);
-            length -= 11;
-
-            _print_text_element(image_file, length);
-            break;
-
-        case 'C':
-            c2 = fgetc(image_file);
-
-            if (c2 == 'r') {
-                printf("creation time:\t\t\t");
-                fseek(image_file, 11, SEEK_CUR);
-                length -= 13;
-
-                _print_text_element(image_file, length);
-                break;
-            }
-
-            c3 = fgetc(image_file);
-
-            if (c3 == 'p') {
-                printf("copyright:\t\t\t");
-                fseek(image_file, 7, SEEK_CUR);
-                length -= 10;
-
-                _print_text_element(image_file, length);
-                break;
-            }
-
-            printf("comment:\t\t\t");
-            fseek(image_file, 5, SEEK_CUR);
-            length -= 8;
-
-            _print_text_element(image_file, length);
-            break;
-
-        case 'S':
-            fseek(image_file, 1, SEEK_CUR);
-            c3 = fgetc(image_file);
-            
-            if (c3 == 'u') {
-                printf("source:\t\t\t\t");
-                fseek(image_file, 4, SEEK_CUR);
-                length -= 7;
-
-                _print_text_element(image_file, length);
-                break;
-            }
-
-            printf("software:\t\t\t");
-            fseek(image_file, 6, SEEK_CUR);
-            length -= 9;
-
-            _print_text_element(image_file, length);
-            break;
-
-
-        case 'W':
-            printf("warning:\t\t\t");
-            fseek(image_file, 7, SEEK_CUR);
-            length -= 8;
-
-            _print_text_element(image_file, length);
-            break;
-        
-        default:
-            putchar(first_char);
-            for (int i = 0; i < length-3; i++) {
-                putchar(fgetc(image_file));
-            }
+    while ((c = fgetc(image_file)) != 0) {
+        iteration++;
+        putchar(c);
     }
+    printf("\t\t");
+
+    length -= iteration+1;
+    _print_text_element(image_file, length);
 }
 
 
@@ -495,7 +390,6 @@ void _print_tiff_metadata(FILE *image_file, int chunk_length) {
             }
         }
     }
-
 }
 
 
