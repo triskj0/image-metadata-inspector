@@ -14,6 +14,8 @@
 #define IHDR_LENGTH 13
 #define DATE_LENGTH 26
 #define HEX_MULTIPLIER 256
+#define BITS_PER_SAMPLE_NAME_DATA_DIST 59
+#define BITS_PER_SAMPLE_DATA_DIST 33
 
 
 // index2 is non-inclusive
@@ -185,18 +187,22 @@ bool _string_is_present_in_file(FILE *image_file, char *str) {
 void _indent_keyword_value(size_t keyword_length) {
     keyword_length++; // count in the color after the keyword
 
-    if (keyword_length < 7)
+    if (keyword_length < 5)
         printf("\t\t\t\t\t");
 
-    else if (keyword_length < 11)
+    else if (keyword_length < 8)
         printf("\t\t\t\t");
 
     else if (keyword_length < 16)
         printf("\t\t\t");
 
-    else if (keyword_length < 19)
+    else if (keyword_length < 20)
         printf("\t\t");
+
+    else if (keyword_length < 27)
+        putchar('\t');
 }
+
 
 
 /* **********************
@@ -311,7 +317,7 @@ void _parse_tEXt_chunk(FILE *image_file) {
         iteration++;
         putchar(c);
     }
-    printf("\t\t");
+    _indent_keyword_value(iteration);
 
     length -= iteration+1;
     _print_text_element(image_file, length);
@@ -347,6 +353,22 @@ void print_tEXt_chunk_data(FILE *image_file) {
  *
  * *********************/
 
+void _print_bits_per_sample_data(FILE *image_file) {
+    int c;
+
+    fseek(image_file, BITS_PER_SAMPLE_NAME_DATA_DIST, SEEK_CUR);
+    c = fgetc(image_file);
+    printf("%c", c);
+
+    for (int i = 0; i < 2; i++) {
+        fseek(image_file, BITS_PER_SAMPLE_DATA_DIST, SEEK_CUR);
+        c = fgetc(image_file);
+        printf(", %c", c);
+    }
+    putchar('\n');
+}
+
+
 void _print_iTXt_keyword_value(FILE *image_file, int keyword_length) {
     int c;
 
@@ -363,7 +385,7 @@ void _print_iTXt_keyword_value(FILE *image_file, int keyword_length) {
 
 
 void _detect_individual_iTXt_metadata_keyword(FILE *image_file, char **keywords, size_t keywords_arr_length) {
-    int keyword_length;
+    int keyword_length, j;
     size_t i;
     int c = fgetc(image_file);
     bool word_found = false;
@@ -374,7 +396,7 @@ void _detect_individual_iTXt_metadata_keyword(FILE *image_file, char **keywords,
 
         keyword_length = strlen(keywords[i]);
 
-        for (int j = 1; j < keyword_length; j++) {
+        for (j = 1; j < keyword_length; j++) {
             if (!(keywords[i][j] == fgetc(image_file))) {
                 fseek(image_file, -j, SEEK_CUR);
                 break;
@@ -388,12 +410,18 @@ void _detect_individual_iTXt_metadata_keyword(FILE *image_file, char **keywords,
         if (word_found) break;
     }
 
+    if (!word_found) return;
+
     fseek(image_file, -keyword_length+1, SEEK_CUR);
     printf("%s:", keywords[i]);
 
     _indent_keyword_value(keyword_length); // tab before printing value
+
+    if (strcmp(keywords[i], "BitsPerSample") == 0) { // special case
+        _print_bits_per_sample_data(image_file);
+        return;
+    }
     _print_iTXt_keyword_value(image_file, keyword_length);
-    return;
 }
 
 
@@ -417,13 +445,18 @@ void _find_iTXt_metadata(FILE *image_file, size_t chunk_length, char **keywords,
                     break;
                 }
                 else if (name_index == metadata_name_length-1) {
-                    fseek(image_file, 1, SEEK_CUR); // skip ':'
+                    if (metadata_name[strlen(metadata_name)-1] != ':') {
+                        fseek(image_file, 1, SEEK_CUR); // skip ':'
+                    }
+
                     _detect_individual_iTXt_metadata_keyword(image_file, keywords, keywords_length);
                     break;
                 }
             }
         }
     }
+    // re-allign file pointer for next metadata
+    fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
 }
 
 
@@ -440,7 +473,11 @@ void print_iTXt_chunk_data(FILE *image_file) {
     size_t length = (unsigned long long) _get_4_byte_int(image_file);
     fseek(image_file, 4, SEEK_CUR);
 
+
+    /* XMP metadata */
+
     if (_string_is_present_in_file(image_file, "tiff")) {
+        printf("\n\t       tiff metadata\n");
         size_t keywords_length = 9;
 
         char *tiff_keywords[] = {
@@ -455,6 +492,46 @@ void print_iTXt_chunk_data(FILE *image_file) {
             "SamplesPerPixel"
         };
         _find_iTXt_metadata(image_file, length, tiff_keywords, keywords_length, "<tiff");
+    }
+
+    if (_string_is_present_in_file(image_file, "xmp:")) { // include the ':' to distinguish from xmpMM
+        printf("\n\t       xmp metadata\n");
+        size_t keywords_length = 4;
+
+        char *xmp_keywords[] = {
+            "CreatorTool",
+            "ModifyDate",
+            "CreateDate",
+            "MetadataDate"
+        };
+        _find_iTXt_metadata(image_file, length, xmp_keywords, keywords_length, "<xmp:");
+    }
+
+    if (_string_is_present_in_file(image_file, "xmpMM")) {
+        printf("\n\t       xmpMM metadata\n");
+        size_t keywords_length = 3;
+
+        char *xmpmm_keywords[] = {
+            "InstanceID",
+            "DocumentID",
+            "OriginalDocumentID"
+        };
+        _find_iTXt_metadata(image_file, length, xmpmm_keywords, keywords_length, "<xmpMM");
+    }
+
+    if (_string_is_present_in_file(image_file, "stEvt")) {
+        printf("\n\t    xmpMM history (stEvt)\n");
+        size_t keywords_length = 6;
+
+        char *stevt_keywords[] = {
+            "action",
+            "instanceID",
+            "when",
+            "softwareAgent",
+            "changed",
+            "parameters"
+        };
+        _find_iTXt_metadata(image_file, length, stevt_keywords, keywords_length, "<stEvt");
     }
 }
 
@@ -850,6 +927,6 @@ void print_tIME_chunk_data(FILE *image_file) {
     second = fgetc(image_file);
 
     printf("\n\n\n ------------ tIME chunk data ------------\n");
-    printf("last data modification date: %d/%d/%d/%d/%d/%d (Y/M/D/h/m/s)\n", year, month, day, hour, minute, second);
+    printf("last data modification date:\t%d/%d/%d/%d/%d/%d (Y/M/D/h/m/s)\n", year, month, day, hour, minute, second);
 }
 
