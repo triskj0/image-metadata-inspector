@@ -711,7 +711,7 @@ void print_tRNS_chunk_data(FILE *image_file, int color_type) {
             break;
 
         case 3: // indexed color
-            printf("chunk contains alpha values correspondingto each entry in the PLTE chunk\n");
+            printf("chunk contains:\nalpha values corresponding to each entry in the PLTE chunk\n");
             break;
     }
 }
@@ -729,7 +729,10 @@ void print_sRGB_chunk_data(FILE *image_file) {
     if (!_find_chunk(image_file, 's', 'R', 'G', 'B')) return;
 
     printf("\n\n\n ------------ sRGB chunk data ------------\n");
-    printf("rendering intent: ");
+    char *message = "rendering intent:";
+
+    printf("%s", message);
+    _indent_keyword_value(strlen(message));
 
     int c = fgetc(image_file);
 
