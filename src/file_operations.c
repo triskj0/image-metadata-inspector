@@ -193,7 +193,7 @@ void _indent_keyword_value(size_t keyword_length) {
     else if (keyword_length < 8)
         printf("\t\t\t\t");
 
-    else if (keyword_length < 16)
+    else if (keyword_length < 17)
         printf("\t\t\t");
 
     else if (keyword_length < 20)
@@ -201,6 +201,11 @@ void _indent_keyword_value(size_t keyword_length) {
 
     else if (keyword_length < 27)
         putchar('\t');
+}
+
+
+void _reset_file_pointer(FILE *image_file) {
+    fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
 }
 
 
@@ -278,7 +283,7 @@ void _get_PLTE_data(FILE *image_file) {
 
 
 void print_PLTE_chunk_data(FILE *image_file) {
-    fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
+    _reset_file_pointer(image_file);
 
     if (!_find_chunk(image_file, 'P', 'L', 'T', 'E')) return;
 
@@ -331,7 +336,7 @@ void print_tEXt_chunk_data(FILE *image_file) {
     better look for it from the start of the file */
 
     if (!title_printed) {
-        fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
+        _reset_file_pointer(image_file);
     }
 
     if (!_find_chunk(image_file, 't', 'E', 'X', 't')) return;
@@ -427,7 +432,7 @@ void _detect_individual_iTXt_metadata_keyword(FILE *image_file, char **keywords,
 
 void _find_iTXt_metadata(FILE *image_file, size_t chunk_length, char **keywords, size_t keywords_length, char *metadata_name) {
     // re-allign file pointer
-    fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
+    _reset_file_pointer(image_file);
     _find_chunk(image_file, 'i', 'T', 'X', 't');
 
     int c, c1;
@@ -456,13 +461,13 @@ void _find_iTXt_metadata(FILE *image_file, size_t chunk_length, char **keywords,
         }
     }
     // re-allign file pointer for next metadata
-    fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
+    _reset_file_pointer(image_file);
 }
 
 
 void print_iTXt_chunk_data(FILE *image_file) {
 
-    fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
+    _reset_file_pointer(image_file);
 
     if (!_find_chunk(image_file, 'i', 'T', 'X', 't')) return;
 
@@ -570,7 +575,7 @@ void _display_bKGD_color(FILE *image_file, int color_type) {
 
 
 void print_bKGD_chunk_data(FILE *image_file, int color_type) {
-    fseek(image_file, IHDR_LENGTH, SEEK_SET);
+    _reset_file_pointer(image_file);
 
     if (!_find_chunk(image_file, 'b', 'K', 'G', 'D')) return;
 
@@ -630,7 +635,7 @@ void print_cHRM_chunk_data(FILE *image_file) {
  * *********************/
 
 void print_sBIT_chunk_data(FILE *image_file, int color_type) {
-    fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET); 
+    _reset_file_pointer(image_file);
     if (!_find_chunk(image_file, 's', 'B', 'I', 'T')) return;
 
     printf("\n\n\n ------------ sBIT chunk data ------------\n");
@@ -681,7 +686,7 @@ void print_sBIT_chunk_data(FILE *image_file, int color_type) {
  * *********************/
 
 void print_tRNS_chunk_data(FILE *image_file, int color_type) {
-    fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
+    _reset_file_pointer(image_file);
     if (!_find_chunk(image_file, 't', 'R', 'N', 'S')) return;
 
     int c0, c1;
@@ -725,7 +730,7 @@ void print_tRNS_chunk_data(FILE *image_file, int color_type) {
  * ********************/
 
 void print_sRGB_chunk_data(FILE *image_file) {
-    fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
+    _reset_file_pointer(image_file);
     if (!_find_chunk(image_file, 's', 'R', 'G', 'B')) return;
 
     printf("\n\n\n ------------ sRGB chunk data ------------\n");
@@ -763,72 +768,76 @@ void print_sRGB_chunk_data(FILE *image_file) {
  *
  * ********************/
 
-void print_eXIf_chunk_data(FILE *image_file) {
-    fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
+void _print_eXIf_value(FILE *image_file, int *i, int chunk_length) {
+    int c;
+    bool is_subarray = false;
 
-    if (!_find_chunk(image_file, 'e', 'X', 'I', 'f')) return;
-    int i, c, length;
-    bool last_char_newline = true;
-    bool brace_found = false;
-
-    printf("\n\n\n ------------ eXIf chunk data ------------\n");
-    fseek(image_file, -8, SEEK_CUR);
-
-    length = _get_4_byte_int(image_file);
-
-    // first find the '{' character
-    for (i = 0; i < length; i++) {
+    for (; *i < chunk_length; (*i)++) {
         c = fgetc(image_file);
 
         if (c == '{') {
-            brace_found = true;
-            break;
+            is_subarray = true;
         }
-    }
-
-    if (!brace_found) {
-        printf("couldn't decode eXIf chunk data\n");
-        return;
-    }
-
-    bool sub_array = false;
-
-    for (; i < length+1; i++) {
-        c = fgetc(image_file);
-
-        if (c == '{') {
-            sub_array = true;
+        
+        else if (c == '}') {
+            if (is_subarray) is_subarray = false;
+            else return; // == end of exif
         }
 
-        if (c == '}' && sub_array == true) {
-            sub_array = false;
+        else if (c == '"') {
+            continue;
         }
 
-        if (c == ',' && sub_array == false) {
+        else if (c == ',' && is_subarray == false) {
             putchar('\n');
-            last_char_newline = true;
-            continue;
-        }
-
-        if (c == ':' && fgetc(image_file) != ' ') {
-            printf(": ");
-            last_char_newline = false;
-            fseek(image_file, -1, SEEK_CUR);
-
-            continue;
-        }
-
-        if (c == '"') {
-            if (last_char_newline)
-                continue;
-
-            putchar(' ');
-            last_char_newline = false;
-            continue;
+            return;
         }
 
         putchar(c);
-        last_char_newline = false;
+    }
+}
+
+
+void print_eXIf_chunk_data(FILE *image_file) {
+    _reset_file_pointer(image_file);
+
+    if (!_find_chunk(image_file, 'e', 'X', 'I', 'f')) return;
+    printf("\n\n\n ------------ eXIf chunk data ------------\n");
+
+    int i, c;
+    int chunk_length;
+    size_t keyword_length = 0;
+    bool reading_keyword = true;
+
+    fseek(image_file, -8, SEEK_CUR);
+    chunk_length = _get_4_byte_int(image_file);
+
+    for (i = 0; i < chunk_length; i++) {
+        c = fgetc(image_file);
+        if (c == '{') break;
+    }
+
+    for (; i < chunk_length; i++) {
+        c = fgetc(image_file);
+
+        if (c == '"') continue;
+
+        if (c == ':' && reading_keyword) {
+            reading_keyword = false;
+            _indent_keyword_value(keyword_length);
+            keyword_length = 0;
+            _print_eXIf_value(image_file, &i, chunk_length);
+            continue;
+        }
+        else if (c == ',' && !reading_keyword) {
+            reading_keyword = true;
+            continue;
+        }
+
+        if (reading_keyword) {
+            keyword_length++;
+            putchar(c);
+        }  
     }
 }
 
@@ -854,7 +863,7 @@ void search_for_common_private_chunks(FILE *image_file) {
     bool title_printed = false;
 
     for (int i = 0; i < names_array_length; i++) {
-        fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
+        _reset_file_pointer(image_file);
 
         c0 = private_chunks_names[i][0];
         c1 = private_chunks_names[i][1];
@@ -887,7 +896,7 @@ void search_for_common_private_chunks(FILE *image_file) {
  * *********************/
 
 void print_gAMA_chunk_data(FILE *image_file) {
-    fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
+    _reset_file_pointer(image_file);
     
     if (!_find_chunk(image_file, 'g', 'A', 'M', 'A')) return;
 
@@ -898,7 +907,7 @@ void print_gAMA_chunk_data(FILE *image_file) {
 
 
 void print_pHYs_chunk_data(FILE *image_file) {
-    fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
+    _reset_file_pointer(image_file);
     if (!_find_chunk(image_file, 'p', 'H', 'Y', 's')) return;
 
     int x_axis_pixels, y_axis_pixels, unit_specifier;
@@ -915,7 +924,7 @@ void print_pHYs_chunk_data(FILE *image_file) {
 
 
 void print_tIME_chunk_data(FILE *image_file) {
-    fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
+    _reset_file_pointer(image_file);
     if (!_find_chunk(image_file, 't', 'I', 'M', 'E')) return;
 
     int year, month, day, hour, minute, second;
