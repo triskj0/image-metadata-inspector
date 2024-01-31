@@ -19,7 +19,7 @@
 
 
 // index2 is non-inclusive
-char *_slice_string(const char *str, int index1, int index2) {
+static char *_slice_string(const char *str, int index1, int index2) {
     int new_str_len = index2 - index1;
 
     char *new_str = malloc(new_str_len*sizeof(char));
@@ -96,7 +96,7 @@ char *get_last_change_date(const char *path) {
 }
 
 
-bool _find_chunk(FILE *image_file, char name_char_0, char name_char_1, char name_char_2, char name_char_3) {
+static bool _find_chunk(FILE *image_file, char name_char_0, char name_char_1, char name_char_2, char name_char_3) {
     /* attempts to find a 4-character chunk name, stops at the last character of the name */
     int c0, c1, c2, c3;
 
@@ -119,7 +119,7 @@ bool _find_chunk(FILE *image_file, char name_char_0, char name_char_1, char name
 }
 
 
-int _get_4_byte_int(FILE *image_file) {
+static int _get_4_byte_int(FILE *image_file) {
     int c;
     int total = 0;
 
@@ -147,17 +147,7 @@ int _get_4_byte_int(FILE *image_file) {
 }
 
 
-int _get_index_of_string_in_array(char *str_array[], int array_length, const char *str) {
-    for (int i = 0; i < array_length; i++) {
-        if (strcmp(str_array[i], str) == 0) {
-            return i;
-        }
-    } 
-    return -1;
-}
-
-
-bool _string_is_present_in_file(FILE *image_file, char *str) {
+static bool _string_is_present_in_file(FILE *image_file, char *str) {
     int str_char1 = str[0];
     int str_len = strlen(str);
     int file_char;
@@ -184,7 +174,7 @@ bool _string_is_present_in_file(FILE *image_file, char *str) {
 }
 
 
-void _indent_keyword_value(size_t keyword_length) {
+static void _indent_keyword_value(size_t keyword_length) {
     keyword_length++; // count in the color after the keyword
 
     if (keyword_length < 5)
@@ -204,7 +194,7 @@ void _indent_keyword_value(size_t keyword_length) {
 }
 
 
-void _reset_file_pointer(FILE *image_file) {
+static void _reset_file_pointer(FILE *image_file) {
     fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
 }
 
@@ -268,7 +258,7 @@ int get_print_IHDR_chunk_data(FILE *image_file) {
  *
  * ************************/
 
-void _get_PLTE_data(FILE *image_file) {
+static void _get_PLTE_data(FILE *image_file) {
     int length = 0;
 
     // 4 bytes before "PLTE" are its length
@@ -299,7 +289,7 @@ void print_PLTE_chunk_data(FILE *image_file) {
  *
  * *********************/
 
-void _print_text_element(FILE *image_file, int length) {
+static void _print_text_element(FILE *image_file, int length) {
     int c;
 
     for (int i = 0; i < length; i++) {
@@ -310,7 +300,7 @@ void _print_text_element(FILE *image_file, int length) {
 }
 
 
-void _parse_tEXt_chunk(FILE *image_file) {
+static void _parse_tEXt_chunk(FILE *image_file) {
     int c, length;
     int iteration = 0;
 
@@ -358,7 +348,7 @@ void print_tEXt_chunk_data(FILE *image_file) {
  *
  * *********************/
 
-void _print_bits_per_sample_data(FILE *image_file) {
+static void _print_bits_per_sample_data(FILE *image_file) {
     int c;
 
     fseek(image_file, BITS_PER_SAMPLE_NAME_DATA_DIST, SEEK_CUR);
@@ -374,7 +364,7 @@ void _print_bits_per_sample_data(FILE *image_file) {
 }
 
 
-void _print_iTXt_keyword_value(FILE *image_file, int keyword_length) {
+static void _print_iTXt_keyword_value(FILE *image_file, int keyword_length) {
     int c;
 
     fseek(image_file, keyword_length, SEEK_CUR);
@@ -389,7 +379,7 @@ void _print_iTXt_keyword_value(FILE *image_file, int keyword_length) {
 }
 
 
-void _detect_individual_iTXt_metadata_keyword(FILE *image_file, char **keywords, size_t keywords_arr_length) {
+static void _detect_individual_iTXt_metadata_keyword(FILE *image_file, char **keywords, size_t keywords_arr_length) {
     int keyword_length, j;
     size_t i;
     int c = fgetc(image_file);
@@ -430,7 +420,7 @@ void _detect_individual_iTXt_metadata_keyword(FILE *image_file, char **keywords,
 }
 
 
-void _find_iTXt_metadata(FILE *image_file, size_t chunk_length, char **keywords, size_t keywords_length, char *metadata_name) {
+static void _find_iTXt_metadata(FILE *image_file, size_t chunk_length, char **keywords, size_t keywords_length, char *metadata_name) {
     // re-allign file pointer
     _reset_file_pointer(image_file);
     _find_chunk(image_file, 'i', 'T', 'X', 't');
@@ -548,7 +538,7 @@ void print_iTXt_chunk_data(FILE *image_file) {
  *
  * *********************/
 
-void _display_bKGD_color(FILE *image_file, int color_type) {
+static void _display_bKGD_color(FILE *image_file, int color_type) {
     int byte0, byte1, byte2;
 
     switch (color_type) {
@@ -768,7 +758,7 @@ void print_sRGB_chunk_data(FILE *image_file) {
  *
  * ********************/
 
-void _print_eXIf_value(FILE *image_file, int *i, int chunk_length) {
+static void _print_eXIf_value(FILE *image_file, int *i, int chunk_length) {
     int c;
     bool is_subarray = false;
 
