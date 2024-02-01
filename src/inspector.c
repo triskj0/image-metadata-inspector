@@ -1,10 +1,7 @@
+#define _CRT_SECURE_NO_DEPRECATE
 #include <stdio.h>
 #include <stdlib.h>
 #include "file_operations.h"
-
-#ifdef _WIN32
-#   pragma warning(disable: 4996)
-#endif
 
 
 int main(int argc, char **argv) {

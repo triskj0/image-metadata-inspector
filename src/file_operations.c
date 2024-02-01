@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_DEPRECATE
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -5,10 +6,6 @@
 #include <time.h>
 #include <stdbool.h>
 #include "file_operations.h"
-
-#ifdef _WIN32
-#   pragma warning(disable: 4996)
-#endif
 
 #define SIGNATURE_END_INDEX 8
 #define IHDR_LENGTH 13
