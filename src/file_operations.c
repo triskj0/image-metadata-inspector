@@ -182,7 +182,7 @@ static bool _string_is_present_in_file(FILE *image_file, char *str) {
 
 
 static void _indent_keyword_value(size_t keyword_length) {
-    keyword_length++; // count in the color after the keyword
+    keyword_length++; // count in the colon after the keyword
 
     if (keyword_length < 5)
         printf("\t\t\t\t\t");
@@ -435,7 +435,7 @@ static void _print_exif_data_within_itxt(FILE *image_file) {
         if (c == ':' && reading_keyword) {
             putchar(':');
             reading_keyword = false;
-            _indent_keyword_value(keyword_length+1);
+            _indent_keyword_value(keyword_length);
             keyword_length = 0;
             _print_exif_value(image_file, &i, chunk_length);
             continue;
@@ -485,7 +485,7 @@ static void _detect_individual_iTXt_metadata_keyword(FILE *image_file, char **ke
     fseek(image_file, -keyword_length+1, SEEK_CUR);
     printf("%s:", keywords[i]);
 
-    _indent_keyword_value(keyword_length); // tab before printing value
+    _indent_keyword_value(keyword_length);
 
     if (strcmp(keywords[i], "BitsPerSample") == 0) { // special case
         _print_bits_per_sample_data(image_file);
@@ -606,7 +606,7 @@ void print_iTXt_chunk_data(FILE *image_file) {
 
     /* `exifEX` and `eXIf chunk` contain the same data, so we only have to print one of them */
     _reset_file_pointer(image_file);
-    if (_find_chunk(image_file, 'e', 'X', 'I', 'f') && _string_is_present_in_file(image_file, "<exifEX:CameraOwnerName>")) {
+    if (!_find_chunk(image_file, 'e', 'X', 'I', 'f') && _string_is_present_in_file(image_file, "<exifEX:CameraOwnerName>")) {
         printf("\nexifEX metadata\n");
         _print_exif_data_within_itxt(image_file);
     }
@@ -822,7 +822,7 @@ void print_sRGB_chunk_data(FILE *image_file) {
     char *message = "rendering intent:";
 
     printf("%s", message);
-    _indent_keyword_value(strlen(message));
+    _indent_keyword_value(strlen(message)-1);
 
     int c = fgetc(image_file);
 
@@ -880,7 +880,7 @@ void print_eXIf_chunk_data(FILE *image_file) {
         if (c == ':' && reading_keyword) {
             putchar(':');
             reading_keyword = false;
-            _indent_keyword_value(keyword_length+1);
+            _indent_keyword_value(keyword_length);
             keyword_length = 0;
             _print_exif_value(image_file, &i, chunk_length);
             continue;
