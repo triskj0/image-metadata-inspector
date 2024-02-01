@@ -96,6 +96,11 @@ char *get_last_change_date(const char *path) {
 }
 
 
+static void _reset_file_pointer(FILE *image_file) {
+    fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
+}
+
+
 static bool _find_chunk(FILE *image_file, char name_char_0, char name_char_1, char name_char_2, char name_char_3) {
     /* attempts to find a 4-character chunk name, stops at the last character of the name */
     int c0, c1, c2, c3;
@@ -148,6 +153,8 @@ static int _get_4_byte_int(FILE *image_file) {
 
 
 static bool _string_is_present_in_file(FILE *image_file, char *str) {
+    _reset_file_pointer(image_file);
+
     int str_char1 = str[0];
     int str_len = strlen(str);
     int file_char;
@@ -180,10 +187,10 @@ static void _indent_keyword_value(size_t keyword_length) {
     if (keyword_length < 5)
         printf("\t\t\t\t\t");
 
-    else if (keyword_length < 8)
+    else if (keyword_length < 9)
         printf("\t\t\t\t");
 
-    else if (keyword_length < 17)
+    else if (keyword_length < 16)
         printf("\t\t\t");
 
     else if (keyword_length < 20)
@@ -191,11 +198,6 @@ static void _indent_keyword_value(size_t keyword_length) {
 
     else if (keyword_length < 27)
         putchar('\t');
-}
-
-
-static void _reset_file_pointer(FILE *image_file) {
-    fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
 }
 
 
@@ -379,6 +381,79 @@ static void _print_iTXt_keyword_value(FILE *image_file, int keyword_length) {
 }
 
 
+static void _print_exif_value(FILE *image_file, int *i, int chunk_length) {
+    int c;
+    bool is_subarray = false;
+
+    for (; *i < chunk_length; (*i)++) {
+        c = fgetc(image_file);
+
+        if (c == '{') {
+            is_subarray = true;
+        }
+
+        else if (c == '}') {
+            if (is_subarray) is_subarray = false;
+            else return; // == end of exif
+        }
+
+        else if (c == '"') {
+            continue;
+        }
+
+        else if (c == ',' && is_subarray == false) {
+            putchar('\n');
+            return;
+        }
+
+        putchar(c);
+    }
+}
+
+
+static void _print_exif_data_within_itxt(FILE *image_file) {
+    int c, i;
+    int chunk_length = 0;
+    size_t keyword_length = 0;
+    bool reading_keyword = true;
+
+    // first measure exifEX
+    while ((c = fgetc(image_file)) != '<') {
+        chunk_length++;
+    }
+    fseek(image_file, -chunk_length-1, SEEK_CUR);
+
+    while (fgetc(image_file) != '{') {
+        ;
+    }
+
+    for (i = 0; i < chunk_length; i++) {
+        c = fgetc(image_file);
+
+        if (c == '"') continue;
+
+        if (c == ':' && reading_keyword) {
+            putchar(':');
+            reading_keyword = false;
+            _indent_keyword_value(keyword_length+1);
+            keyword_length = 0;
+            _print_exif_value(image_file, &i, chunk_length);
+            continue;
+        }
+        else if (c == ',' && !reading_keyword) {
+            reading_keyword = true;
+            continue;
+        }
+
+        if (reading_keyword) {
+            keyword_length++;
+            putchar(c);
+        }
+    }
+    putchar('\n');
+}
+
+
 static void _detect_individual_iTXt_metadata_keyword(FILE *image_file, char **keywords, size_t keywords_arr_length) {
     int keyword_length, j;
     size_t i;
@@ -472,7 +547,7 @@ void print_iTXt_chunk_data(FILE *image_file) {
     /* XMP metadata */
 
     if (_string_is_present_in_file(image_file, "tiff")) {
-        printf("\n\t       tiff metadata\n");
+        printf("\ntiff metadata\n");
         size_t keywords_length = 9;
 
         char *tiff_keywords[] = {
@@ -490,7 +565,7 @@ void print_iTXt_chunk_data(FILE *image_file) {
     }
 
     if (_string_is_present_in_file(image_file, "xmp:")) { // include the ':' to distinguish from xmpMM
-        printf("\n\t       xmp metadata\n");
+        printf("\nxmp metadata\n");
         size_t keywords_length = 4;
 
         char *xmp_keywords[] = {
@@ -503,7 +578,7 @@ void print_iTXt_chunk_data(FILE *image_file) {
     }
 
     if (_string_is_present_in_file(image_file, "xmpMM")) {
-        printf("\n\t       xmpMM metadata\n");
+        printf("\nxmpMM metadata\n");
         size_t keywords_length = 3;
 
         char *xmpmm_keywords[] = {
@@ -515,7 +590,7 @@ void print_iTXt_chunk_data(FILE *image_file) {
     }
 
     if (_string_is_present_in_file(image_file, "stEvt")) {
-        printf("\n\t    xmpMM history (stEvt)\n");
+        printf("\nxmpMM history (stEvt)\n");
         size_t keywords_length = 6;
 
         char *stevt_keywords[] = {
@@ -527,6 +602,26 @@ void print_iTXt_chunk_data(FILE *image_file) {
             "parameters"
         };
         _find_iTXt_metadata(image_file, length, stevt_keywords, keywords_length, "<stEvt");
+    }
+
+    /* `exifEX` and `eXIf chunk` contain the same data, so we only have to print one of them */
+    _reset_file_pointer(image_file);
+    if (_find_chunk(image_file, 'e', 'X', 'I', 'f') && _string_is_present_in_file(image_file, "<exifEX:CameraOwnerName>")) {
+        printf("\nexifEX metadata\n");
+        _print_exif_data_within_itxt(image_file);
+    }
+
+    if (_string_is_present_in_file(image_file, "<exif:")) {
+        printf("\nexif metadata\n");
+        size_t keywords_length = 4;
+
+        char *exif_keywords[] = {
+            "ColorSpace",
+            "ExifVersion",
+            "PixelXDimension",
+            "PixelYDimension"
+        };
+        _find_iTXt_metadata(image_file, length, exif_keywords, keywords_length, "<exif");
     }
 }
 
@@ -758,36 +853,6 @@ void print_sRGB_chunk_data(FILE *image_file) {
  *
  * ********************/
 
-static void _print_eXIf_value(FILE *image_file, int *i, int chunk_length) {
-    int c;
-    bool is_subarray = false;
-
-    for (; *i < chunk_length; (*i)++) {
-        c = fgetc(image_file);
-
-        if (c == '{') {
-            is_subarray = true;
-        }
-        
-        else if (c == '}') {
-            if (is_subarray) is_subarray = false;
-            else return; // == end of exif
-        }
-
-        else if (c == '"') {
-            continue;
-        }
-
-        else if (c == ',' && is_subarray == false) {
-            putchar('\n');
-            return;
-        }
-
-        putchar(c);
-    }
-}
-
-
 void print_eXIf_chunk_data(FILE *image_file) {
     _reset_file_pointer(image_file);
 
@@ -813,10 +878,11 @@ void print_eXIf_chunk_data(FILE *image_file) {
         if (c == '"') continue;
 
         if (c == ':' && reading_keyword) {
+            putchar(':');
             reading_keyword = false;
-            _indent_keyword_value(keyword_length);
+            _indent_keyword_value(keyword_length+1);
             keyword_length = 0;
-            _print_eXIf_value(image_file, &i, chunk_length);
+            _print_exif_value(image_file, &i, chunk_length);
             continue;
         }
         else if (c == ',' && !reading_keyword) {
