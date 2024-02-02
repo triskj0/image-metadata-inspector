@@ -14,6 +14,10 @@
 #define BITS_PER_SAMPLE_NAME_DATA_DIST 59
 #define BITS_PER_SAMPLE_DATA_DIST 33
 
+#define INCORRECT_FILETYPE_ERROR_MSG "\n[ERROR] The filetype has to be \"png\", not \"%s\".\n\n"
+#define COULD_NOT_READ_IHDR_ERROR "\n[ERROR] The specified file wasn't read successfully, it may be corrupted.\
+                \n\tThere has been an error while trying to read the header chunk.\n\n"
+
 
 // index2 is non-inclusive
 static char *_slice_string(const char *str, int index1, int index2) {
@@ -33,8 +37,9 @@ static char *_slice_string(const char *str, int index1, int index2) {
 
 char *get_filename(const char *path) {
     int path_len = strlen(path);
-    int last_slash_index;
-    char current, *filename;
+    int last_slash_index = -1;
+    char current;
+    char *filename;
 
     for (int i = 0; i < path_len; i++) { 
         current = path[i];
@@ -43,6 +48,11 @@ char *get_filename(const char *path) {
             last_slash_index = i;
         }
     }
+
+    if (last_slash_index == -1) {
+        return _slice_string(path, 0, path_len);
+    }
+
     filename = _slice_string(path, last_slash_index+1, path_len);
 
     return filename;
@@ -62,7 +72,7 @@ char *get_filetype_extension(const char *filename) {
     char *extension = _slice_string(filename, extension_start_index, filename_len);
 
     if (strcmp(extension, "png") != 0 && strcmp(extension, "PNG") != 0) {
-        fprintf(stderr, "\n[ERROR] The filetype has to be PNG, not %s.\n", extension);
+        fprintf(stderr, INCORRECT_FILETYPE_ERROR_MSG, extension);
         exit(EXIT_FAILURE);
     }
 
@@ -108,12 +118,10 @@ static bool _find_chunk(FILE *image_file, char name_char_0, char name_char_1, ch
             c2 = fgetc(image_file);
             c3 = fgetc(image_file);
 
-            if (c1 == name_char_1 && c2 == name_char_2 && c3 == name_char_3) {
+            if (c1 == name_char_1 && c2 == name_char_2 && c3 == name_char_3)
                 return true;
-            }
-            else {
-                fseek(image_file, -3, SEEK_CUR);
-            }
+
+            fseek(image_file, -3, SEEK_CUR);
         }
     }
 
@@ -211,8 +219,7 @@ static void _verify_ihdr_data_validity(int height, int width, int bit_depth, int
     if (height < 0 || width < 0 || bit_depth < 0 || color_type < 0 || compression_method < 0 \
             || filter_method < 0 || interlace_method < 0) {
 
-        fprintf(stderr, "\n[ERROR] The specified file wasn't read successfully, it may be corrupted.\
-                \n\tThere has been an error while trying to read the header chunk.\n\n");
+        fprintf(stderr, COULD_NOT_READ_IHDR_ERROR);
         
         exit(EXIT_FAILURE);
     }
@@ -221,8 +228,6 @@ static void _verify_ihdr_data_validity(int height, int width, int bit_depth, int
 
 int get_print_IHDR_chunk_data(FILE *image_file) {
     int width, height, bit_depth, color_type, compression_method, filter_method, interlace_method;
-    int width_byte_length = 4;
-    int height_byte_length = 4;
 
     // skip png signature bytes + 4 length bytes + 4 chunk type (IHDR) bytes 
     fseek(image_file, SIGNATURE_END_INDEX+8, SEEK_CUR);
@@ -263,7 +268,7 @@ static void _get_PLTE_data(FILE *image_file) {
     int length = 0;
 
     // 4 bytes before "PLTE" are its length
-    //     => -4 (for each letter in PLTE) + 4 for the length bytes
+    //     => -4 (for each letter in PLTE) - 4 for the length bytes
     fseek(image_file, -8, SEEK_CUR);
 
     length = _get_4_byte_int(image_file);
@@ -315,7 +320,7 @@ static void _parse_tEXt_chunk(FILE *image_file) {
     }
     _indent_keyword_value(iteration);
 
-    length -= iteration+1;
+    length -= iteration + 1;
     _print_text_element(image_file, length);
 }
 

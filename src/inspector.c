@@ -3,11 +3,15 @@
 #include <stdlib.h>
 #include "file_operations.h"
 
+#define USAGE "\n[USAGE] %s <path to image>\n\n"
+#define FILE_NOT_FOUND_ERROR "\n[ERROR] Invalid file-name, file was not found.\n\n"
+#define COULD_NOT_OPEN_FILE_ERROR "[ERROR] file could not be opened.\n\n"
+
 
 int main(int argc, char **argv) {
     
     if (argc < 2) {
-        fprintf(stderr, "\n[ERROR] Please provide a path to a PNG image.\n");
+        fprintf(stderr, USAGE, get_filename(argv[0]));
         exit(EXIT_FAILURE);
     }
 
@@ -29,7 +33,7 @@ int main(int argc, char **argv) {
     file_size = get_file_size(path);
 
     if (file_size == -1) {
-        fprintf(stderr, "\n[ERROR] Invalid file-name, file was not found.\n");
+        fprintf(stderr, FILE_NOT_FOUND_ERROR);
         exit(EXIT_FAILURE);
     }
 
@@ -44,7 +48,7 @@ int main(int argc, char **argv) {
     image_file = fopen(path, "rb");
 
     if (image_file == NULL) {
-        fprintf(stderr, "[ERROR] file could not be opened.");
+        fprintf(stderr, COULD_NOT_OPEN_FILE_ERROR);
         exit(EXIT_FAILURE);
     }
 
