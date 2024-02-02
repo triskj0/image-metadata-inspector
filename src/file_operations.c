@@ -205,6 +205,20 @@ static void _indent_keyword_value(size_t keyword_length) {
  *
  * *********************/
 
+static void _verify_ihdr_data_validity(int height, int width, int bit_depth, int color_type, \
+        int compression_method, int filter_method, int interlace_method) {
+
+    if (height < 0 || width < 0 || bit_depth < 0 || color_type < 0 || compression_method < 0 \
+            || filter_method < 0 || interlace_method < 0) {
+
+        fprintf(stderr, "\n[ERROR] The specified file wasn't read successfully, it may be corrupted.\
+                \n\tThere has been an error while trying to read the header chunk.\n\n");
+        
+        exit(EXIT_FAILURE);
+    }
+}
+
+
 int get_print_IHDR_chunk_data(FILE *image_file) {
     int width, height, bit_depth, color_type, compression_method, filter_method, interlace_method;
     int width_byte_length = 4;
@@ -213,29 +227,17 @@ int get_print_IHDR_chunk_data(FILE *image_file) {
     // skip png signature bytes + 4 length bytes + 4 chunk type (IHDR) bytes 
     fseek(image_file, SIGNATURE_END_INDEX+8, SEEK_CUR);
 
-    width = 0;
-    for (int i = 0; i < width_byte_length; i++) {
-        if (width == 0) {
-            width = fgetc(image_file);
-        } else {
-            width = width * HEX_MULTIPLIER + fgetc(image_file);
-        }
-    }
-
-    height = 0;
-    for (int i = 0; i < height_byte_length; i++) {
-        if (height == 0) {
-            height = fgetc(image_file);
-        } else {
-            height = height * HEX_MULTIPLIER + fgetc(image_file);
-        }
-    }
+    width = _get_4_byte_int(image_file);
+    height = _get_4_byte_int(image_file);
 
     bit_depth = fgetc(image_file);
     color_type = fgetc(image_file);
     compression_method = fgetc(image_file);
     filter_method = fgetc(image_file);
     interlace_method = fgetc(image_file);
+
+    _verify_ihdr_data_validity(height, width, bit_depth, color_type,\
+            compression_method, filter_method, interlace_method);
 
     printf("\n\n ------------ IHDR chunk data ------------ \n");
     printf("width:\t\t\t\t%d\n", width);
