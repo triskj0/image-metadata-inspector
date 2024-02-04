@@ -1,8 +1,6 @@
 #ifndef FILE_OPERATIONS_H
 #define FILE_OPERATIONS_H
 
-#include <stdio.h>
-
 
 char *get_filename(const char *path);
 
