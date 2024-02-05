@@ -2,25 +2,35 @@
 #define TEST(got, expected, fn_name)            \
     do {                                        \
         if (got == expected) {                  \
-            passed_count++;                     \
-            printf("[PASSED] %s\n", fn_name);   \
-        }                                       \
-        else {                                  \
-            failed_count++;                     \
-            printf("[FAILED] %s\n", fn_name);   \
-        }                                       \
+            printf("\n[PASSED] %s", fn_name);   \
+			return 1;							\
+        }	      		                        \
+       	printf("\n[FAILED] %s", fn_name);   	\
+		return 0;								\
+												\
     } while (0);
 
-#define STR_TEST(got, expected, fn_name)        \
+
+int STR_TEST(char *got, char *expected, char *fn_name) {
+	if (strcmp(got, expected) == 0) {
+		printf("\n[PASSED] %s", fn_name);
+		return 1;
+	}
+	printf("[FAILED] %s", fn_name);
+	return 0;
+}
+
+
+#define STR_TEST2(got, expected, fn_name)       \
     do {                                        \
         if (strcmp(got, expected) == 0) {       \
-            passed_count++;                     \
-            printf("[PASSED] %s\n", fn_name);   \
+            (*passed_count)++;                  \
+            printf("\n[PASSED] %s", fn_name);   \
         }                                       \
         else {                                  \
 	    printf("\n%d", strcmp(got, expected));  \
-            failed_count++;                     \
-            printf("[FAILED] %s\n", fn_name);   \
+            *(failed_count)++;                  \
+            printf("\n[FAILED] %s", fn_name);   \
         }                                       \
     } while (0);
 
@@ -31,7 +41,7 @@ void find_difference(char *, char *);
 
 
 void print_results(int passed, int failed) {
-	printf("\n[TOTAL] passed: %d", passed);
+	printf("\n\n[TOTAL] passed: %d", passed);
 	printf("\n[TOTAL] failed: %d", failed);
 }
 
