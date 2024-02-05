@@ -1,4 +1,7 @@
-#define _CRT_SECURE_NO_DEPRECATE
+#ifdef _WIN32
+#   define _CRT_SECURE_NO_DEPRECATE
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "file_operations.h"

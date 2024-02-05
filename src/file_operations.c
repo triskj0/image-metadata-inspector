@@ -1,4 +1,6 @@
-#define _CRT_SECURE_NO_DEPRECATE
+#ifdef _WIN32
+#   define _CRT_SECURE_NO_DEPRECATE
+#endif
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -17,6 +19,69 @@
 #define INCORRECT_FILETYPE_ERROR "\n[ERROR] The filetype has to be \"png\", not \"%s\".\n\n"
 #define COULD_NOT_READ_IHDR_ERROR "\n[ERROR] The specified file wasn't read successfully, it may be corrupted.\
                 \n\tThere has been an error while trying to read the header chunk.\n\n"
+
+#define MAX_N_KEYWORDS 9
+typedef struct {
+    size_t number_of_keywords;
+    char *keywords[MAX_N_KEYWORDS];
+} KeywordsArray;
+
+
+KeywordsArray tiff_keywords = {
+    .number_of_keywords = 9,
+    .keywords = {
+        "ResolutionUnit",
+        "XResolution",
+        "YResolution",
+        "Orientation",
+        "ImageWidth",
+        "ImageLength",
+        "BitsPerSample",
+        "PhotometricInterpretation",
+        "SamplesPerPixel"
+    }
+};
+
+KeywordsArray xmp_keywords = {
+    .number_of_keywords = 4,
+    .keywords = {
+        "CreatorTool",
+        "ModifyDate",
+        "CreateDate",
+        "MetadataDate"
+    }
+};
+
+KeywordsArray xmpmm_keywords = {
+    .number_of_keywords = 3,
+    .keywords = {
+        "InstanceID",
+        "DocumentID",
+        "OriginalDocumentID"
+    }
+};
+
+KeywordsArray stevt_keywords = {
+    .number_of_keywords = 6,
+    .keywords = {
+        "action",
+        "instanceID",
+        "when",
+        "softwareAgent",
+        "changed",
+        "parameters"
+    }
+};
+
+KeywordsArray exif_keywords = {
+    .number_of_keywords = 4,
+    .keywords = {
+        "ColorSpace",
+        "ExifVersion",
+        "PixelXDimension",
+        "PixelYDimension"
+    }
+};
 
 
 // index2 is non-inclusive
@@ -548,64 +613,24 @@ void print_iTXt_chunk_data(FILE *image_file) {
     fseek(image_file, 4, SEEK_CUR);
 
 
-    /* XMP metadata */
-
     if (_string_is_present_in_file(image_file, "tiff")) {
         printf("\ntiff metadata\n");
-        size_t keywords_length = 9;
-
-        char *tiff_keywords[] = {
-            "ResolutionUnit",
-            "XResolution",
-            "YResolution",
-            "Orientation",
-            "ImageWidth",
-            "ImageLength",
-            "BitsPerSample",
-            "PhotometricInterpretation",
-            "SamplesPerPixel"
-        };
-        _find_iTXt_metadata(image_file, length, tiff_keywords, keywords_length, "<tiff");
+        _find_iTXt_metadata(image_file, length, tiff_keywords.keywords, tiff_keywords.number_of_keywords, "<tiff");
     }
 
     if (_string_is_present_in_file(image_file, "xmp:")) { // include the ':' to distinguish from xmpMM
         printf("\nxmp metadata\n");
-        size_t keywords_length = 4;
-
-        char *xmp_keywords[] = {
-            "CreatorTool",
-            "ModifyDate",
-            "CreateDate",
-            "MetadataDate"
-        };
-        _find_iTXt_metadata(image_file, length, xmp_keywords, keywords_length, "<xmp:");
+        _find_iTXt_metadata(image_file, length, xmp_keywords.keywords, xmp_keywords.number_of_keywords, "<xmp:");
     }
 
     if (_string_is_present_in_file(image_file, "xmpMM")) {
         printf("\nxmpMM metadata\n");
-        size_t keywords_length = 3;
-
-        char *xmpmm_keywords[] = {
-            "InstanceID",
-            "DocumentID",
-            "OriginalDocumentID"
-        };
-        _find_iTXt_metadata(image_file, length, xmpmm_keywords, keywords_length, "<xmpMM");
+        _find_iTXt_metadata(image_file, length, xmpmm_keywords.keywords, xmpmm_keywords.number_of_keywords, "<xmpMM");
     }
 
     if (_string_is_present_in_file(image_file, "stEvt")) {
         printf("\nxmpMM history (stEvt)\n");
-        size_t keywords_length = 6;
-
-        char *stevt_keywords[] = {
-            "action",
-            "instanceID",
-            "when",
-            "softwareAgent",
-            "changed",
-            "parameters"
-        };
-        _find_iTXt_metadata(image_file, length, stevt_keywords, keywords_length, "<stEvt");
+        _find_iTXt_metadata(image_file, length, stevt_keywords.keywords, stevt_keywords.number_of_keywords, "<stEvt");
     }
 
     /* `exifEX` and `eXIf chunk` contain the same data, so we only have to print one of them */
@@ -615,17 +640,11 @@ void print_iTXt_chunk_data(FILE *image_file) {
         _print_exif_data_within_itxt(image_file);
     }
 
+    /* although exifEX contains the same data as the eXIf chunk, data under "exif" in the iTXt chunk
+       contain different information */
     if (_string_is_present_in_file(image_file, "<exif:")) {
         printf("\nexif metadata\n");
-        size_t keywords_length = 4;
-
-        char *exif_keywords[] = {
-            "ColorSpace",
-            "ExifVersion",
-            "PixelXDimension",
-            "PixelYDimension"
-        };
-        _find_iTXt_metadata(image_file, length, exif_keywords, keywords_length, "<exif");
+        _find_iTXt_metadata(image_file, length, exif_keywords.keywords, exif_keywords.number_of_keywords, "<exif");
     }
 }
 
