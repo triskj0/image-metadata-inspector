@@ -3,11 +3,11 @@
     do {                                        \
         if (got == expected) {                  \
             printf("\n[PASSED] %s", fn_name);   \
-			return 1;							\
-        }	      		                        \
-       	printf("\n[FAILED] %s", fn_name);   	\
-		return 0;								\
-												\
+			return 1;                           \
+        }                                       \
+        printf("\n[FAILED] %s", fn_name);       \
+		return 0;                               \
+                                                \
     } while (0);
 
 
@@ -31,7 +31,7 @@ void find_difference(char *str1, char *str2) {
 	for (int i = 0; i < max_iter; i++, c1++, c2++) {
 		printf("\n%c : %c", *c1, *c2);
 		if (*c1 != *c2) {
-			printf("\n\nHERE\n%c\n%c", *c1, *c2);
+			printf("\n\nHERE\nbuffer: .%d.\ncorrect: .%d.", *c1, *c2);
 			return;
 		}
 	}
@@ -44,7 +44,7 @@ int STR_TEST(char *got, char *expected, char *fn_name) {
 		printf("\n[PASSED] %s", fn_name);
 		return 1;
 	}
-	printf("\n[FAILED] %s", fn_name);
-	return 0;
+    printf("\n[FAILED] %s", fn_name);
+    return 0;
 }
 
