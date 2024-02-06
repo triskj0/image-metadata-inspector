@@ -82,7 +82,7 @@ void itxt_test(int *passed_count, int *failed_count) {
 	close(results_file_fd);
 	close(old_stdout);
 
-	int length = 1200;
+	int length = 2000;
 	char buffer[length];
 	FILE *results_fp = fopen(RESULTS_FILE_NAME, "r");
 	fread(&buffer, sizeof(char), length, results_fp);

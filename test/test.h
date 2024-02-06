@@ -11,32 +11,9 @@
     } while (0);
 
 
-int STR_TEST(char *got, char *expected, char *fn_name) {
-	if (strcmp(got, expected) == 0) {
-		printf("\n[PASSED] %s", fn_name);
-		return 1;
-	}
-	printf("[FAILED] %s", fn_name);
-	return 0;
-}
-
-
-#define STR_TEST2(got, expected, fn_name)       \
-    do {                                        \
-        if (strcmp(got, expected) == 0) {       \
-            (*passed_count)++;                  \
-            printf("\n[PASSED] %s", fn_name);   \
-        }                                       \
-        else {                                  \
-	    printf("\n%d", strcmp(got, expected));  \
-            *(failed_count)++;                  \
-            printf("\n[FAILED] %s", fn_name);   \
-        }                                       \
-    } while (0);
-
-
 void print_results(int, int);
 void find_difference(char *, char *);
+int STR_TEST(char *, char *, char *);
 
 
 
@@ -59,5 +36,15 @@ void find_difference(char *str1, char *str2) {
 		}
 	}
 	printf("\ndidn't find any differences\n");
+}
+
+
+int STR_TEST(char *got, char *expected, char *fn_name) {
+	if (strcmp(got, expected) == 0) {
+		printf("\n[PASSED] %s", fn_name);
+		return 1;
+	}
+	printf("\n[FAILED] %s", fn_name);
+	return 0;
 }
 
