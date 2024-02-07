@@ -6,13 +6,13 @@
 #include "test.h"
 #include "../src/file_operations.h"
 
+#define RESULTS_FILE_NAME "results.txt"
 #define IHDR_PATH "../src/examples/png/exif-itxt.png"
 #define IHDR_CORRECT_RESULT "\n\n ------------ IHDR chunk data ------------ \n"\
 		"width:\t\t\t\t1023\nheight:\t\t\t\t1023\nbit depth:\t\t\t8\n"\
 		"color type:\t\t\t6\ncompression method:\t\t0\nfilter method:\t\t\t0\n"\
 		"interlace method:\t\t0\n"
 
-#define RESULTS_FILE_NAME "results.txt"
 #define EXIF_ITXT_PATH IHDR_PATH
 #define ITXT_CORRECT_RESULT "\n\n\n ------------ iTXt chunk data ------------\n"\
 		"\ntiff metadata\nResolutionUnit:\t\t\t2\nXResolution:\t\t\t72"\
@@ -23,6 +23,10 @@
 #define TEXT_PATH "../src/examples/png/sbit-phys-text-prvw-mkts.png"
 #define TEXT_CORRECT_RESULT "\n\n\n ------------ tEXt chunk data ------------\n"\
 		"Software\t\t\tAdobe Fireworks CS6\n"
+
+#define PLTE_PATH "../src/examples/png/gama-srgb-phys-plte.png"
+#define PLTE_CORRECT_RESULT "\n\n\n ------------ PLTE chunk data ------------\n"\
+		"palette length:\t\t\t768\nnumber of colors:\t\t256\n"
 
 
 void delete_and_recreate_results_file() {
@@ -81,60 +85,34 @@ void ihdr_test(int *passed_count, int *failed_count) {
 }
 
 
-void itxt_test(int *passed_count, int *failed_count) {
+void test_fn(void (*function_ptr)(), int buffer_length, char *image_path, char *correct_result,\
+	char *test_message, int *passed_count, int *failed_count) {
+
 	fflush(stdout);
 	delete_and_recreate_results_file();
 	int old_stdout = dup(1);
 
 	int results_file_fd = redirect_stdout();
 
-	FILE *image_fp = fopen(EXIF_ITXT_PATH, "rb");
-	print_iTXt_chunk_data(image_fp);
+	FILE *image_fp = fopen(image_path, "rb");
+	(*function_ptr) (image_fp);
 	fclose(image_fp);
 
 	reset_out(old_stdout);
 	close(results_file_fd);
 
-	int length = 2000;
-	char buffer[length];
+	char buffer[buffer_length];
 	FILE *results_fp = fopen(RESULTS_FILE_NAME, "r");
-	fread(&buffer, sizeof(char), length, results_fp);
+	fread(&buffer, sizeof(char), buffer_length, results_fp);
 	fclose(results_fp);
 
-	if (STR_TEST(buffer, ITXT_CORRECT_RESULT, "ITXT - exif-itxt.png")) {
+	if (STR_TEST(buffer, correct_result, test_message)) {
 		(*passed_count)++;
 		return;
 	}
 	(*failed_count)++;
 }
 
-
-void text_test(int *passed_count, int *failed_count) {
-	fflush(stdout);
-	delete_and_recreate_results_file();
-	int old_stdout = dup(1);
-
-	int results_file_fd = redirect_stdout();
-
-	FILE *image_fp = fopen(TEXT_PATH, "rb");
-	print_tEXt_chunk_data(image_fp);
-	fclose(image_fp);
-
-	reset_out(old_stdout);
-	close(results_file_fd);
-
-	int length = 2800;
-	char buffer[length];
-	FILE *results_fp = fopen(RESULTS_FILE_NAME, "r");
-	fread(&buffer, sizeof(char), length, results_fp);
-	fclose(results_fp);
-
-	if (STR_TEST(buffer, TEXT_CORRECT_RESULT, "TEXT - sbit-phys-text-prvw-mkts.png")) {
-		(*passed_count)++;
-		return;
-	}
-	(*failed_count)++;
-}
 
 int main(void) {
 
@@ -143,12 +121,18 @@ int main(void) {
 
 	// tests
 	ihdr_test(&passed_count, &failed_count);
-	itxt_test(&passed_count, &failed_count);
-	text_test(&passed_count, &failed_count);
 
-	//print_results(passed_count, failed_count);
+	test_fn(print_iTXt_chunk_data, 2000, EXIF_ITXT_PATH, ITXT_CORRECT_RESULT,\
+			"ITXT - exif-itxt.png", &passed_count, &failed_count);
 
-	//remove(RESULTS_FILE_NAME);
+	test_fn(print_tEXt_chunk_data, 2800, TEXT_PATH, TEXT_CORRECT_RESULT,\
+			"TEXT - sbit-phys-text-prvw-mkts.png", &passed_count, &failed_count);
+
+	test_fn(print_PLTE_chunk_data, 4000, PLTE_PATH, PLTE_CORRECT_RESULT,\
+			"PLTE - gama-srgb-phys-plte.png", &passed_count, &failed_count);
+
+	print_results(passed_count, failed_count);
+	remove(RESULTS_FILE_NAME);
 	return 0;
 }
 
