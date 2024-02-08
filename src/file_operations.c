@@ -86,7 +86,7 @@ KeywordsArray exif_keywords = {
 
 // index2 is non-inclusive
 static char *_slice_string(const char *str, int index1, int index2) {
-    int new_str_len = index2 - index1;
+    int new_str_len = index2 - index1 + 1;
 
     char *new_str = malloc(new_str_len*sizeof(char));
     int new_str_index = 0;
