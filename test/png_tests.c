@@ -54,6 +54,51 @@ int redirect_stdout() {
 }
 
 
+int read_file(char *buffer, FILE *file_ptr) {
+	int c;
+	int i = 0;
+
+	while ((c = fgetc(file_ptr)) != EOF) {
+		buffer[i] = c;
+		++i;
+	}
+
+	return i;
+}
+
+
+void compare_result(char *result_buffer, int n_bytes_read, char *correct_result, char *description, int *passed_count, int *failed_count) {
+	int index = 0;
+	int correct_result_length = 0;
+
+	char failed_message[50] = "[FAILED] ";
+	char passed_message[50] = "[PASSED] ";
+	strcat(failed_message, description);
+	strcat(passed_message, description);
+
+	// get length of correct_result
+	for (int j = 0; correct_result[j] != 0; j++)
+		correct_result_length++;
+
+	for (; index < correct_result_length; index++) {
+		if (result_buffer[index] != correct_result[index]) {
+			printf("\n%s", failed_message);
+			(*failed_count)++;
+			return;
+		}
+	}
+	if (n_bytes_read == index) {
+		printf("\n%s", passed_message);
+		//printf("\nbytes read: %d", index);
+		(*passed_count)++;
+		return;
+	}
+
+	printf("\n%s", failed_message);
+	(*failed_count)++;
+}
+
+
 void ihdr_test(int *passed_count, int *failed_count) {
 	delete_and_recreate_results_file();
 	int old_stdout = dup(1);
@@ -70,18 +115,13 @@ void ihdr_test(int *passed_count, int *failed_count) {
 	close(results_file_fd);
 
 	// load result into a buffer
-	int length = 300;
+	int length = 200;
 	char buffer[length];
 	FILE *results_fp = fopen(RESULTS_FILE_NAME, "r");
-	fread(&buffer, sizeof(char), length, results_fp);
+	int n_bytes_read = read_file(buffer, results_fp);
 	fclose(results_fp);
 
-	// compare
-	if (STR_TEST(buffer, IHDR_CORRECT_RESULT, "IHDR - exif-itxt.png")) {
-		(*passed_count)++;
-		return;
-	}
-	(*failed_count)++;
+	compare_result(buffer, n_bytes_read, IHDR_CORRECT_RESULT, "IHDR - exif-itxt.png", passed_count, failed_count);
 }
 
 
@@ -103,14 +143,10 @@ void test_fn(void (*function_ptr)(), int buffer_length, char *image_path, char *
 
 	char buffer[buffer_length];
 	FILE *results_fp = fopen(RESULTS_FILE_NAME, "r");
-	fread(&buffer, sizeof(char), buffer_length, results_fp);
+	int n_bytes_read = read_file(buffer, results_fp);
 	fclose(results_fp);
 
-	if (STR_TEST(buffer, correct_result, test_message)) {
-		(*passed_count)++;
-		return;
-	}
-	(*failed_count)++;
+	compare_result(buffer, n_bytes_read, correct_result, test_message, passed_count, failed_count);
 }
 
 
@@ -122,17 +158,17 @@ int main(void) {
 	// tests
 	ihdr_test(&passed_count, &failed_count);
 
-	test_fn(print_iTXt_chunk_data, 2000, EXIF_ITXT_PATH, ITXT_CORRECT_RESULT,\
+	test_fn(print_iTXt_chunk_data, 300, EXIF_ITXT_PATH, ITXT_CORRECT_RESULT,\
 			"ITXT - exif-itxt.png", &passed_count, &failed_count);
 
-	test_fn(print_tEXt_chunk_data, 2800, TEXT_PATH, TEXT_CORRECT_RESULT,\
+	test_fn(print_tEXt_chunk_data, 150, TEXT_PATH, TEXT_CORRECT_RESULT,\
 			"TEXT - sbit-phys-text-prvw-mkts.png", &passed_count, &failed_count);
 
-	test_fn(print_PLTE_chunk_data, 4000, PLTE_PATH, PLTE_CORRECT_RESULT,\
+	test_fn(print_PLTE_chunk_data, 150, PLTE_PATH, PLTE_CORRECT_RESULT,\
 			"PLTE - gama-srgb-phys-plte.png", &passed_count, &failed_count);
 
 	print_results(passed_count, failed_count);
-	remove(RESULTS_FILE_NAME);
+	//remove(RESULTS_FILE_NAME);
 	return 0;
 }
 

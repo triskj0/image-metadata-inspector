@@ -1,0 +1,6 @@
+
+
+
+ ------------ PLTE chunk data ------------
+palette length:			768
+number of colors:		256
