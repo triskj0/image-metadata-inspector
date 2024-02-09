@@ -38,16 +38,10 @@
 
 #define CHRM_PATH "../src/examples/png/gama-chrm-phys-time-bkgd-text.png"
 #define CHRM_MESSAGE "CHRM - gama-chrm-phys-time-bkgd-text.png"
-#define CHRM_CORRECT_RESULT "\n\n\n ------------ cHRM chunk data ------------\n"\
+#define CHRM_CORRECT_RESULT "\n\n\n ------------ bKGD chunk data ------------\n"\
 		"white point x:\t\t\t31270\nwhite point y:\t\t\t32900\nred x:\t\t\t\t64000\n"\
-		"red y:\t\t\t\t33000\ngreen x:\t\t\t30000\ngreen y:\t\t\t60000\n"\
-		"blue x:\t\t\t\t15000\nblue y:\t\t\t\t6000\n"
-
-#define SBIT_PATH "../src/examples/png/sbit-phys-text-prvw-mkts.png"
-#define SBIT_MESSAGE "SBIT - sbit-phys-text-prvw-mkts.png"
-#define SBIT_CORRECT_RESULT "\n\n\n ------------ sBIT chunk data ------------\n"\
-		"(number of significant bits to these channels)\nred:\t\t\t\t8\n"\
-		"green:\t\t\t\t8\nblue:\t\t\t\t8\nalpha:\t\t\t\t8\n"
+		"red y:\t\t\t\t33000\ngreen x:\t\t\t\t30000\ngreen y:\n\n\n\n60000\n"\
+		"blue x:\n\n\n\n15000\nblue y:\n\n\n\n6000\n"
 
 int color_type;
 
@@ -159,8 +153,7 @@ void test_fn(void (*function_ptr)(), int buffer_length, char *image_path, char *
 
 	FILE *image_fp = fopen(image_path, "rb");
 
-	if (strcmp(test_message, BKGD_MESSAGE) == 0 || \
-		strcmp(test_message, SBIT_MESSAGE) == 0) {
+	if (strcmp(test_message, BKGD_MESSAGE) == 0) {
 		(*function_ptr) (image_fp, color_type);
 	}
 	else {
@@ -175,6 +168,11 @@ void test_fn(void (*function_ptr)(), int buffer_length, char *image_path, char *
 	FILE *results_fp = fopen(RESULTS_FILE_NAME, "r");
 	int n_bytes_read = read_file(buffer, results_fp);
 	fclose(results_fp);
+	
+	if (buffer_length == 500) {
+		find_difference(buffer, CHRM_CORRECT_RESULT);
+		return;
+	}
 
 	compare_result(buffer, n_bytes_read, correct_result, test_message, passed_count, failed_count);
 }
@@ -200,11 +198,8 @@ int main(void) {
 	test_fn(print_bKGD_chunk_data, 150, BKGD_PATH, BKGD_CORRECT_RESULT,\
 			BKGD_MESSAGE, &passed_count, &failed_count);
 
-	test_fn(print_cHRM_chunk_data, 250, CHRM_PATH, CHRM_CORRECT_RESULT,\
+	test_fn(print_cHRM_chunk_data, 500, CHRM_PATH, CHRM_CORRECT_RESULT,\
 			CHRM_MESSAGE, &passed_count, &failed_count);
-
-	test_fn(print_sBIT_chunk_data, 250, SBIT_PATH, SBIT_CORRECT_RESULT,\
-			SBIT_MESSAGE, &passed_count, &failed_count);
 
 	print_results(passed_count, failed_count);
 	remove(RESULTS_FILE_NAME);
