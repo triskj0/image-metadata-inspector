@@ -14,6 +14,7 @@
 		"interlace method:\t\t0\n"
 
 #define EXIF_ITXT_PATH IHDR_PATH
+#define ITXT_MESSAGE "ITXT - exif-itxt.png"
 #define ITXT_CORRECT_RESULT "\n\n\n ------------ iTXt chunk data ------------\n"\
 		"\ntiff metadata\nResolutionUnit:\t\t\t2\nXResolution:\t\t\t72"\
 		"\nYResolution:\t\t\t72\nOrientation:\t\t\t1\n\nxmp metadata"\
@@ -21,12 +22,21 @@
 		"\nColorSpace:\t\t\t1\nPixelYDimension:\t\t1023\n"
 
 #define TEXT_PATH "../src/examples/png/sbit-phys-text-prvw-mkts.png"
+#define TEXT_MESSAGE "TEXT - sbit-phys-text-prvw-mkts.png"
 #define TEXT_CORRECT_RESULT "\n\n\n ------------ tEXt chunk data ------------\n"\
 		"Software\t\t\tAdobe Fireworks CS6\n"
 
 #define PLTE_PATH "../src/examples/png/gama-srgb-phys-plte.png"
+#define PLTE_MESSAGE "PLTE - gama-srgb-phys-plte.png"
 #define PLTE_CORRECT_RESULT "\n\n\n ------------ PLTE chunk data ------------\n"\
 		"palette length:\t\t\t768\nnumber of colors:\t\t256\n"
+
+#define BKGD_PATH "../src/examples/png/gama-chrm-phys-time-bkgd-text.png"
+#define BKGD_MESSAGE "BKGD - gama-chrm-phys-time-bkgd-text.png"
+#define BKGD_CORRECT_RESULT "\n\n\n ------------ bKGD chunk data ------------\n"\
+		"background color value:\t\t[255, 255, 255]\n"
+
+int color_type;
 
 
 void delete_and_recreate_results_file() {
@@ -107,7 +117,7 @@ void ihdr_test(int *passed_count, int *failed_count) {
 
 	// START testing inside the file
 	FILE *image_fp = fopen(IHDR_PATH, "rb");
-	get_print_IHDR_chunk_data(image_fp);
+	color_type = get_print_IHDR_chunk_data(image_fp);
 	fclose(image_fp);
 
 	// reset output
@@ -135,9 +145,15 @@ void test_fn(void (*function_ptr)(), int buffer_length, char *image_path, char *
 	int results_file_fd = redirect_stdout();
 
 	FILE *image_fp = fopen(image_path, "rb");
-	(*function_ptr) (image_fp);
-	fclose(image_fp);
 
+	if (strcmp(test_message, BKGD_MESSAGE) == 0) {
+		(*function_ptr) (image_fp, color_type);
+	}
+	else {
+		(*function_ptr) (image_fp);
+	}
+
+	fclose(image_fp);
 	reset_out(old_stdout);
 	close(results_file_fd);
 
@@ -159,16 +175,19 @@ int main(void) {
 	ihdr_test(&passed_count, &failed_count);
 
 	test_fn(print_iTXt_chunk_data, 300, EXIF_ITXT_PATH, ITXT_CORRECT_RESULT,\
-			"ITXT - exif-itxt.png", &passed_count, &failed_count);
+			ITXT_MESSAGE, &passed_count, &failed_count);
 
 	test_fn(print_tEXt_chunk_data, 150, TEXT_PATH, TEXT_CORRECT_RESULT,\
-			"TEXT - sbit-phys-text-prvw-mkts.png", &passed_count, &failed_count);
+			TEXT_MESSAGE, &passed_count, &failed_count);
 
 	test_fn(print_PLTE_chunk_data, 150, PLTE_PATH, PLTE_CORRECT_RESULT,\
-			"PLTE - gama-srgb-phys-plte.png", &passed_count, &failed_count);
+			PLTE_MESSAGE, &passed_count, &failed_count);
+
+	test_fn(print_bKGD_chunk_data, 150, BKGD_PATH, BKGD_CORRECT_RESULT,\
+			BKGD_MESSAGE, &passed_count, &failed_count);
 
 	print_results(passed_count, failed_count);
-	//remove(RESULTS_FILE_NAME);
+	remove(RESULTS_FILE_NAME);
 	return 0;
 }
 
