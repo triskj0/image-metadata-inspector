@@ -706,8 +706,8 @@ void print_cHRM_chunk_data(FILE *image_file) {
     if (!_find_chunk(image_file, 'c', 'H', 'R', 'M')) return;
 
     /* each stored in 4 bytes
-    0 -> while point x
-    1 -> while point y
+    0 -> white point x
+    1 -> white point y
     2 -> red x
     3 -> red y
     4 -> green x
@@ -724,8 +724,8 @@ void print_cHRM_chunk_data(FILE *image_file) {
 
     printf("\n\n\n ------------ cHRM chunk data ------------\n");
 
-    printf("while point x:\t\t\t%d\n", chromaticities[0]);
-    printf("while point y:\t\t\t%d\n", chromaticities[1]);
+    printf("white point x:\t\t\t%d\n", chromaticities[0]);
+    printf("white point y:\t\t\t%d\n", chromaticities[1]);
     printf("red x:\t\t\t\t%d\n", chromaticities[2]);
     printf("red y:\t\t\t\t%d\n", chromaticities[3]);
     printf("green x:\t\t\t%d\n", chromaticities[4]);
