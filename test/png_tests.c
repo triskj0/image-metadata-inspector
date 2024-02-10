@@ -49,14 +49,52 @@
 		"(number of significant bits to these channels)\nred:\t\t\t\t8\n"\
 		"green:\t\t\t\t8\nblue:\t\t\t\t8\nalpha:\t\t\t\t8\n"
 
+#define TRNS_PATH "../src/examples/png/plte-trns.png"
+#define TRNS_MESSAGE "TRNS - plte-trns.png"
+#define TRNS_CORRECT_RESULT "\n\n\n ------------ tRNS chunk data ------------\n"\
+		"chunk contains:\nalpha values corresponding to each entry in the PLTE chunk\n"
+
+#define SRGB_PATH "../src/examples/png/gama-srgb-phys-plte.png"
+#define SRGB_MESSAGE "SRGB - gama-srgb-phys-plte.png"
+#define SRGB_CORRECT_RESULT "\n\n\n ------------ sRGB chunk data ------------\n"\
+		"rendering intent:\t\tperceptual"
+
+#define EXIF_PATH "../src/examples/png/exif-itxt.png"
+#define EXIF_MESSAGE "EXIF - exif-itxt.png"
+#define EXIF_CORRECT_RESULT "\n\n\n ------------ eXIf chunk data ------------\n"\
+		"is_remix:\t\t\tfalse\npremium_sources:\t\t[]\nsource:\t\t\t\tother\n"\
+		"uid_for_file:\t\t\tF60D7994-D648-476C-B0C4-CD8FF2691F19\n"\
+		"subsource:\t\t\tdone_button\nused_sources:\t\t\t{\\version\\:1,\\sources\\:[]}\n"\
+		"fte_sources:\t\t\t[]"
+
+#define CPC_PATH "../src/examples/png/sbit-phys-text-prvw-mkts.png"
+#define CPC_MESSAGE "COMMON PRIVATE CHUNKS - sbit-phys-text-prvw-mkts.png"
+#define CPC_CORRECT_RESULT "\n\n\n ------------ private chunks ------------\n"\
+		"[prVW] - one chunk of type prVW was found\n[mkBF] - one chunk of type mkBF was found\n"\
+		"[mkBS] - one chunk of type mkBS was found\n[mkBT] - multiple private chunks of type mkBT were found\n"\
+		"[mkTS] - one chunk of type mkTS was found\n"
+
+#define GAMA_PATH "../src/examples/png/gama-srgb-phys-plte.png"
+#define GAMA_MESSAGE "GAMA - gama-srgb-phys-plte.png"
+#define GAMA_CORRECT_RESULT "\n\n\n ------------ gAMA chunk data ------------\n"\
+		"gamma value:\t\t\t45455\n"
+
+#define PHYS_PATH "../src/examples/png/gama-chrm-phys-time-bkgd-text.png"
+#define PHYS_MESSAGE "PHYS - gama-chrm-phys-time-bkgd-text.png"
+#define PHYS_CORRECT_RESULT "\n\n\n ------------ pHYs chunk data ------------\n"\
+		"unit:\t\t\t\tmeter (pixels per unit)\nx axis:\t\t\t\t2835\ny axis:\t\t\t\t2835\n"
+
+#define TIME_PATH "../src/examples/png/gama-chrm-phys-time-bkgd-text.png"
+#define TIME_MESSAGE "TIME - gama-chrm-phys-time-bkgd-text.png"
+#define TIME_CORRECT_RESULT "\n\n\n ------------ tIME chunk data ------------\n"\
+		"last data modification date:\t2020/8/3/5/59/43 (Y/M/D/h/m/s)\n"
+
 int color_type;
 
 
 void delete_and_recreate_results_file() {
-	// delete, doesn't matter wheter it is successful or not
 	remove(RESULTS_FILE_NAME);
 	
-	// create a new results file
 	FILE *new_fp = fopen(RESULTS_FILE_NAME, "w");
 	fclose(new_fp);
 }
@@ -92,16 +130,13 @@ int read_file(char *buffer, FILE *file_ptr) {
 
 void compare_result(char *result_buffer, int n_bytes_read, char *correct_result, char *description, int *passed_count, int *failed_count) {
 	int index = 0;
-	int correct_result_length = 0;
 
 	char failed_message[50] = "[FAILED] ";
 	char passed_message[50] = "[PASSED] ";
 	strcat(failed_message, description);
 	strcat(passed_message, description);
 
-	// get length of correct_result
-	for (int j = 0; correct_result[j] != 0; j++)
-		correct_result_length++;
+	int correct_result_length = strlen(correct_result);
 
 	for (; index < correct_result_length; index++) {
 		if (result_buffer[index] != correct_result[index]) {
@@ -112,13 +147,21 @@ void compare_result(char *result_buffer, int n_bytes_read, char *correct_result,
 	}
 	if (n_bytes_read == index) {
 		printf("\n%s", passed_message);
-		//printf("\nbytes read: %d", index);
 		(*passed_count)++;
 		return;
 	}
 
 	printf("\n%s", failed_message);
 	(*failed_count)++;
+}
+
+
+int get_color_type(FILE *file) {
+	// signature_end_index+4 chunk length bytes + 4 characters ("IHDR")
+	// + 4 width bytes, 4 length bytes, 1 bit depth byte
+	fseek(file, 25, SEEK_CUR);
+
+	return fgetc(file);
 }
 
 
@@ -160,7 +203,9 @@ void test_fn(void (*function_ptr)(), int buffer_length, char *image_path, char *
 	FILE *image_fp = fopen(image_path, "rb");
 
 	if (strcmp(test_message, BKGD_MESSAGE) == 0 || \
-		strcmp(test_message, SBIT_MESSAGE) == 0) {
+		strcmp(test_message, SBIT_MESSAGE) == 0 || \
+		strcmp(test_message, TRNS_MESSAGE) == 0) {
+		int color_type = get_color_type(image_fp);
 		(*function_ptr) (image_fp, color_type);
 	}
 	else {
@@ -205,6 +250,27 @@ int main(void) {
 
 	test_fn(print_sBIT_chunk_data, 250, SBIT_PATH, SBIT_CORRECT_RESULT,\
 			SBIT_MESSAGE, &passed_count, &failed_count);
+
+	test_fn(print_tRNS_chunk_data, 200, TRNS_PATH, TRNS_CORRECT_RESULT,\
+			TRNS_MESSAGE, &passed_count, &failed_count);
+
+	test_fn(print_sRGB_chunk_data, 200, SRGB_PATH, SRGB_CORRECT_RESULT,\
+			SRGB_MESSAGE, &passed_count, &failed_count);
+
+	test_fn(print_eXIf_chunk_data, 350, EXIF_PATH, EXIF_CORRECT_RESULT,\
+			EXIF_MESSAGE, &passed_count, &failed_count);
+
+	test_fn(search_for_common_private_chunks, 350, CPC_PATH, CPC_CORRECT_RESULT,\
+			CPC_MESSAGE, &passed_count, &failed_count);
+
+	test_fn(print_gAMA_chunk_data, 150, GAMA_PATH, GAMA_CORRECT_RESULT,\
+			GAMA_MESSAGE, &passed_count, &failed_count);
+
+	test_fn(print_pHYs_chunk_data, 200, PHYS_PATH, PHYS_CORRECT_RESULT,\
+			PHYS_MESSAGE, &passed_count, &failed_count);
+
+	test_fn(print_tIME_chunk_data, 200, TIME_PATH, TIME_CORRECT_RESULT,\
+			TIME_MESSAGE, &passed_count, &failed_count);
 
 	print_results(passed_count, failed_count);
 	remove(RESULTS_FILE_NAME);
