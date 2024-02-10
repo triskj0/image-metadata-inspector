@@ -383,6 +383,7 @@ static void _parse_tEXt_chunk(FILE *image_file) {
         iteration++;
         putchar(c);
     }
+    putchar(':');
     _indent_keyword_value(iteration);
 
     length -= iteration + 1;

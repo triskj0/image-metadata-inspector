@@ -24,7 +24,7 @@
 #define TEXT_PATH "../src/examples/png/sbit-phys-text-prvw-mkts.png"
 #define TEXT_MESSAGE "TEXT - sbit-phys-text-prvw-mkts.png"
 #define TEXT_CORRECT_RESULT "\n\n\n ------------ tEXt chunk data ------------\n"\
-		"Software\t\t\tAdobe Fireworks CS6\n"
+		"Software:\t\t\tAdobe Fireworks CS6\n"
 
 #define PLTE_PATH "../src/examples/png/gama-srgb-phys-plte.png"
 #define PLTE_MESSAGE "PLTE - gama-srgb-phys-plte.png"
