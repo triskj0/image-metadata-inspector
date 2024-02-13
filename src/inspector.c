@@ -4,7 +4,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "file_operations.h"
+#include "png_operations.h"
+#include "jpg_operations.h"
 
 #define USAGE "\n[USAGE] %s <path to image>\n\n"
 #define FILE_NOT_FOUND_ERROR "\n[ERROR] Invalid file-name, file was not found.\n\n"
@@ -55,20 +56,20 @@ int main(int argc, char **argv) {
         exit(EXIT_FAILURE);
     }
 
-    int color_type = get_print_IHDR_chunk_data(image_file);
-    print_cHRM_chunk_data(image_file);
-    print_gAMA_chunk_data(image_file);
-    print_sBIT_chunk_data(image_file, color_type);
-    print_PLTE_chunk_data(image_file);
-    print_tRNS_chunk_data(image_file, color_type);
-    print_bKGD_chunk_data(image_file, color_type);
-    print_tEXt_chunk_data(image_file);
-    print_iTXt_chunk_data(image_file);
-    print_pHYs_chunk_data(image_file);
-    print_sRGB_chunk_data(image_file);
-    print_tIME_chunk_data(image_file);
-    print_eXIf_chunk_data(image_file);
-    search_for_common_private_chunks(image_file);
+    int color_type = png_get_print_IHDR_chunk_data(image_file);
+    png_print_cHRM_chunk_data(image_file);
+    png_print_gAMA_chunk_data(image_file);
+    png_print_sBIT_chunk_data(image_file, color_type);
+    png_print_PLTE_chunk_data(image_file);
+    png_print_tRNS_chunk_data(image_file, color_type);
+    png_print_bKGD_chunk_data(image_file, color_type);
+    png_print_tEXt_chunk_data(image_file);
+    png_print_iTXt_chunk_data(image_file);
+    png_print_pHYs_chunk_data(image_file);
+    png_print_sRGB_chunk_data(image_file);
+    png_print_tIME_chunk_data(image_file);
+    png_print_eXIf_chunk_data(image_file);
+    png_search_for_common_private_chunks(image_file);
 
     fclose(image_file);
     printf("\n\n");

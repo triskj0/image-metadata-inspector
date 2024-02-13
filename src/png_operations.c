@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <stdbool.h>
-#include "file_operations.h"
+#include "png_operations.h"
 
 #define SIGNATURE_END_INDEX 8
 #define IHDR_LENGTH 13
@@ -291,7 +291,7 @@ static void _verify_ihdr_data_validity(int height, int width, int bit_depth, int
 }
 
 
-int get_print_IHDR_chunk_data(FILE *image_file) {
+int png_get_print_IHDR_chunk_data(FILE *image_file) {
     int width, height, bit_depth, color_type, compression_method, filter_method, interlace_method;
 
     // skip png signature bytes + 4 length bytes + 4 chunk type (IHDR) bytes 
@@ -343,7 +343,7 @@ static void _get_PLTE_data(FILE *image_file) {
 }
 
 
-void print_PLTE_chunk_data(FILE *image_file) {
+void png_print_PLTE_chunk_data(FILE *image_file) {
     _reset_file_pointer(image_file);
 
     if (!_find_chunk(image_file, 'P', 'L', 'T', 'E')) return;
@@ -391,7 +391,7 @@ static void _parse_tEXt_chunk(FILE *image_file) {
 }
 
 
-void print_tEXt_chunk_data(FILE *image_file) {
+void png_print_tEXt_chunk_data(FILE *image_file) {
     static bool title_printed = false;
 
     /* tEXt has no ordering constraints,
@@ -409,7 +409,7 @@ void print_tEXt_chunk_data(FILE *image_file) {
     }
 
     _parse_tEXt_chunk(image_file);
-    print_tEXt_chunk_data(image_file);
+    png_print_tEXt_chunk_data(image_file);
 }
 
 
@@ -600,7 +600,7 @@ static void _find_iTXt_metadata(FILE *image_file, size_t chunk_length, char **ke
 }
 
 
-void print_iTXt_chunk_data(FILE *image_file) {
+void png_print_iTXt_chunk_data(FILE *image_file) {
 
     _reset_file_pointer(image_file);
 
@@ -683,7 +683,7 @@ static void _display_bKGD_color(FILE *image_file, int color_type) {
 }
 
 
-void print_bKGD_chunk_data(FILE *image_file, int color_type) {
+void png_print_bKGD_chunk_data(FILE *image_file, int color_type) {
     _reset_file_pointer(image_file);
 
     if (!_find_chunk(image_file, 'b', 'K', 'G', 'D')) return;
@@ -701,7 +701,7 @@ void print_bKGD_chunk_data(FILE *image_file, int color_type) {
  *
  * *********************/
 
-void print_cHRM_chunk_data(FILE *image_file) {
+void png_print_cHRM_chunk_data(FILE *image_file) {
     // calling this fn right after IHDR, no need for resetting file pointer
 
     if (!_find_chunk(image_file, 'c', 'H', 'R', 'M')) return;
@@ -743,7 +743,7 @@ void print_cHRM_chunk_data(FILE *image_file) {
  *
  * *********************/
 
-void print_sBIT_chunk_data(FILE *image_file, int color_type) {
+void png_print_sBIT_chunk_data(FILE *image_file, int color_type) {
     _reset_file_pointer(image_file);
     if (!_find_chunk(image_file, 's', 'B', 'I', 'T')) return;
 
@@ -794,7 +794,7 @@ void print_sBIT_chunk_data(FILE *image_file, int color_type) {
  *
  * *********************/
 
-void print_tRNS_chunk_data(FILE *image_file, int color_type) {
+void png_print_tRNS_chunk_data(FILE *image_file, int color_type) {
     _reset_file_pointer(image_file);
     if (!_find_chunk(image_file, 't', 'R', 'N', 'S')) return;
 
@@ -838,7 +838,7 @@ void print_tRNS_chunk_data(FILE *image_file, int color_type) {
  *
  * ********************/
 
-void print_sRGB_chunk_data(FILE *image_file) {
+void png_print_sRGB_chunk_data(FILE *image_file) {
     _reset_file_pointer(image_file);
     if (!_find_chunk(image_file, 's', 'R', 'G', 'B')) return;
 
@@ -877,7 +877,7 @@ void print_sRGB_chunk_data(FILE *image_file) {
  *
  * ********************/
 
-void print_eXIf_chunk_data(FILE *image_file) {
+void png_print_eXIf_chunk_data(FILE *image_file) {
     _reset_file_pointer(image_file);
 
     if (!_find_chunk(image_file, 'e', 'X', 'I', 'f')) return;
@@ -929,7 +929,7 @@ void print_eXIf_chunk_data(FILE *image_file) {
  *
  * ***********************/
 
-void search_for_common_private_chunks(FILE *image_file) {
+void png_search_for_common_private_chunks(FILE *image_file) {
     char *private_chunks_names[] = {
         "prVW",
         "mkBF",
@@ -975,7 +975,7 @@ void search_for_common_private_chunks(FILE *image_file) {
  *
  * *********************/
 
-void print_gAMA_chunk_data(FILE *image_file) {
+void png_print_gAMA_chunk_data(FILE *image_file) {
     _reset_file_pointer(image_file);
     
     if (!_find_chunk(image_file, 'g', 'A', 'M', 'A')) return;
@@ -986,7 +986,7 @@ void print_gAMA_chunk_data(FILE *image_file) {
 }
 
 
-void print_pHYs_chunk_data(FILE *image_file) {
+void png_print_pHYs_chunk_data(FILE *image_file) {
     _reset_file_pointer(image_file);
     if (!_find_chunk(image_file, 'p', 'H', 'Y', 's')) return;
 
@@ -1003,7 +1003,7 @@ void print_pHYs_chunk_data(FILE *image_file) {
 }
 
 
-void print_tIME_chunk_data(FILE *image_file) {
+void png_print_tIME_chunk_data(FILE *image_file) {
     _reset_file_pointer(image_file);
     if (!_find_chunk(image_file, 't', 'I', 'M', 'E')) return;
 

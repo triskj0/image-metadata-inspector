@@ -1,0 +1,6 @@
+#ifndef JPG_OPERATIONS_H
+#define JPG_OPERATIONS_H
+
+
+#endif // JPG_OPERATIONS_H
+
