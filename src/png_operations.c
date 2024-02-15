@@ -136,7 +136,9 @@ char *get_filetype_extension(const char *filename) {
 
     char *extension = _slice_string(filename, extension_start_index, filename_len);
 
-    if (strcmp(extension, "png") != 0 && strcmp(extension, "PNG") != 0) {
+    if (strcmp(extension, "png") != 0 && strcmp(extension, "PNG") != 0 &&\
+            strcmp(extension, "jpg") != 0 && strcmp(extension, "JPG") != 0) {
+
         fprintf(stderr, INCORRECT_FILETYPE_ERROR, extension);
         exit(EXIT_FAILURE);
     }
