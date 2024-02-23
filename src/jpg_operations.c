@@ -60,15 +60,35 @@ static int _read_n_byte_int(FILE *image_file, int n)
 }
 
 
-static void _reset_file_pointer(FILE *image_file)
+// data values sometimes only store data in the first n out of the 4
+// available bytes, so reading all 4 can result in incorrect data
+static int _read_4_byte_data_value(FILE *image_file) {
+    int val, val2;
+
+    val = _read_n_byte_int(image_file, 2);
+    val2 = _read_n_byte_int(image_file, 2);
+
+    if (val > 0 && val2 > 0) {
+        fseek(image_file, -4, SEEK_CUR);
+        return _read_n_byte_int(image_file, 4);
+    }
+
+    if (val == 0)
+        return val2;
+
+    return val;
+}
+
+
+static void _goto_file_offset(FILE *file, int offset)
 {
-    fseek(image_file, 0, SEEK_SET);
+    fseek(file, offset + byte_alignment_offset, SEEK_SET);
 }
 
 
 static int _get_string_offset_from_start_of_file(FILE *image_file, char *str)
 {
-    _reset_file_pointer(image_file);
+    fseek(image_file, 0, SEEK_SET);
 
     int offset = 0;
     int str_char1 = str[0];
@@ -100,36 +120,6 @@ static int _get_string_offset_from_start_of_file(FILE *image_file, char *str)
 }
 
 
-static bool _find_string_in_file(FILE *image_file, char *str)
-{
-    _reset_file_pointer(image_file);
-
-    int str_char1 = str[0];
-    int str_len = strlen(str);
-    int file_char;
-
-    while ((file_char = fgetc(image_file)) != EOF) {
-
-        if (file_char == str_char1) {
-            for (int i = 1; i < str_len; i++) {
-                file_char = fgetc(image_file);
-
-                if (file_char != str[i]) {
-                    fseek(image_file, -i, SEEK_CUR);
-                    break;
-                }
-
-                else if (i == str_len-1) {
-                    return true;
-                }
-            }
-        }
-    }
-
-    return false;
-}
-
-
 static void _read_tiff_header(FILE *image_file)
 {
     if ((byte_alignment_offset = _get_string_offset_from_start_of_file(image_file, "Exif")) == -1) {
@@ -153,12 +143,10 @@ static void _read_tiff_header(FILE *image_file)
 
 
 // can be used with `data format` 5, 10; length is expected to be 8
-static void _print_fract_value_by_mm_offset(FILE *image_file, int offset)
+static void _print_fract_value_by_offset(FILE *image_file, int offset)
 {
     long old_file_pos = ftell(image_file);
-
-    _reset_file_pointer(image_file);
-    fseek(image_file, offset+byte_alignment_offset, SEEK_CUR);
+    _goto_file_offset(image_file, offset);
 
     printf("data value: ");
     printf("%d/", _read_n_byte_int(image_file, 4));
@@ -168,12 +156,27 @@ static void _print_fract_value_by_mm_offset(FILE *image_file, int offset)
 }
 
 
-static int _print_value_by_mm_offset(FILE *image_file, int offset, int total_components_length, int n_components)
+static void _print_ascii_string_by_offset(FILE *image_file, int offset, int string_length)
+{
+    int old_file_pos = ftell(image_file);
+    char letter;
+
+    _goto_file_offset(image_file, offset);
+
+    for (int i = 0; i < string_length; i++) {
+        letter = fgetc(image_file);
+        putchar(letter);
+    }
+    putchar('\n');
+
+    fseek(image_file, old_file_pos, SEEK_SET);
+}
+
+
+static void _print_value_by_offset(FILE *image_file, int offset, int total_components_length, int n_components)
 {
     long old_file_pos = ftell(image_file);
-
-    _reset_file_pointer(image_file);
-    fseek(image_file, offset+byte_alignment_offset, SEEK_CUR);
+    _goto_file_offset(image_file, offset);
 
     int single_component_length = total_components_length/n_components;
 
@@ -181,7 +184,6 @@ static int _print_value_by_mm_offset(FILE *image_file, int offset, int total_com
         printf("value (%d): %d\n", i+1, _read_n_byte_int(image_file, single_component_length));
 
     fseek(image_file, old_file_pos, SEEK_SET);
-    return 0;
 }
 
 
@@ -201,7 +203,7 @@ static int _get_total_components_length(int format_value, int components_count)
             return 8 * components_count;
 
         default:
-            fprintf(stderr, "\n[ERROR] Unrecognized format value\n%s : %d\n", __FILE__, __LINE__);
+            fprintf(stderr, "\n[ERROR] Unrecognized format value (%d)\n%s : %d\n", format_value, __FILE__, __LINE__);
             exit(EXIT_FAILURE);
     }
 }
@@ -212,7 +214,7 @@ static int _get_total_components_length(int format_value, int components_count)
 // returns the offset to the next IFD
 static int _print_ifd_entry_data(FILE *image_file)
 {
-    int tag_number, data_format, n_components, data_value_or_offset, total_components_length;
+    int tag_number, data_format, n_components, data_value, data_offset, total_components_length;
 
     static int function_call_number = 0;
     function_call_number++;
@@ -227,25 +229,30 @@ static int _print_ifd_entry_data(FILE *image_file)
         data_format = _read_n_byte_int(image_file, 2);
         n_components = _read_n_byte_int(image_file, 4);
 
-        data_value_or_offset = _read_n_byte_int(image_file, 4);
-
         printf("\ntag number: 0x%X\n", tag_number);
         printf("data format: %d\n", data_format);
         printf("number of components: %d\n", n_components);
 
-        if ((total_components_length = _get_total_components_length(data_format, n_components)) > 4)
-            printf("data offset: %d\n", data_value_or_offset);
+        if ((total_components_length = _get_total_components_length(data_format, n_components)) > 4) {
+            data_offset = _read_n_byte_int(image_file, 4);
+            printf("data offset: %d\n", data_offset);
+        }
         else {
-            printf("data value: %d\n", data_value_or_offset);
+            data_value = _read_4_byte_data_value(image_file);
+            printf("data value: %d\n", data_value);
         }
         printf("total components length: %d\n", total_components_length);
 
         if (data_format == 5) {
-            _print_fract_value_by_mm_offset(image_file, data_value_or_offset);
+            _print_fract_value_by_offset(image_file, data_offset);
         }
         else if ((data_format == 1 || data_format == 3 || data_format == 4 || data_format == 6 || \
                  data_format == 7 || data_format == 8 || data_format == 9) && total_components_length > 4) {
-            _print_value_by_mm_offset(image_file, data_value_or_offset, total_components_length, n_components);
+            _print_value_by_offset(image_file, data_offset, total_components_length, n_components);
+        }
+        else if (n_components > 4 && data_format == 2) {
+            printf("data value: ");
+            _print_ascii_string_by_offset(image_file, data_offset, n_components);
         }
     }
 
