@@ -6,8 +6,10 @@
 #include <string.h>
 #include <stdbool.h>
 #include "jpg_operations.h"
+#include "csv_lookup.h"
 #define HEX_MULTIPLIER        16
 #define HEX_MULTIPLIER_POW_2 256
+#define JPG_EXIF_TAGS_FILEPATH "./jpg_exif_tags.csv"
 
 static char byte_alignment[3];
 static int byte_alignment_offset;
@@ -62,7 +64,8 @@ static int _read_n_byte_int(FILE *image_file, int n)
 
 // data values sometimes only store data in the first n out of the 4
 // available bytes, so reading all 4 can result in incorrect data
-static int _read_4_byte_data_value(FILE *image_file) {
+static int _read_4_byte_data_value(FILE *image_file)
+{
     int val, val2;
 
     val = _read_n_byte_int(image_file, 2);
@@ -148,7 +151,6 @@ static void _print_fract_value_by_offset(FILE *image_file, int offset)
     long old_file_pos = ftell(image_file);
     _goto_file_offset(image_file, offset);
 
-    printf("data value: ");
     printf("%d/", _read_n_byte_int(image_file, 4));
     printf("%d\n", _read_n_byte_int(image_file, 4));
 
@@ -180,8 +182,13 @@ static void _print_value_by_offset(FILE *image_file, int offset, int total_compo
 
     int single_component_length = total_components_length/n_components;
 
-    for (int i = 0; i < n_components; i++)
-        printf("value (%d): %d\n", i+1, _read_n_byte_int(image_file, single_component_length));
+    for (int i = 0; i < n_components; i++) {
+        if (i == n_components - 1) {
+            printf("%d\n", _read_n_byte_int(image_file, single_component_length));
+            break;
+        }
+        printf("%d, ", _read_n_byte_int(image_file, single_component_length));
+    }
 
     fseek(image_file, old_file_pos, SEEK_SET);
 }
@@ -212,7 +219,7 @@ static int _get_total_components_length(int format_value, int components_count)
 // expects that the file pointer is right before the ifd starts
 // that is, before the number of directory entries
 // returns the offset to the next IFD
-static int _print_ifd_entry_data(FILE *image_file)
+static int _print_ifd_entry_data(FILE *image_file, FILE *csv_fp)
 {
     int tag_number, data_format, n_components, data_value, data_offset, total_components_length;
 
@@ -225,25 +232,31 @@ static int _print_ifd_entry_data(FILE *image_file)
 
     for (int i = 0; i < n_entries; i++) {
         tag_number = _read_n_byte_int(image_file, 2);
-
         data_format = _read_n_byte_int(image_file, 2);
         n_components = _read_n_byte_int(image_file, 4);
 
-        printf("\ntag number: 0x%X\n", tag_number);
-        printf("data format: %d\n", data_format);
-        printf("number of components: %d\n", n_components);
+        char *tag_string = csv_get_string_by_value(csv_fp, tag_number);
+        printf("%s: ", tag_string);
+        free(tag_string);
 
         if ((total_components_length = _get_total_components_length(data_format, n_components)) > 4) {
             data_offset = _read_n_byte_int(image_file, 4);
-            printf("data offset: %d\n", data_offset);
         }
-        else {
-            data_value = _read_4_byte_data_value(image_file);
-            printf("data value: %d\n", data_value);
-        }
-        printf("total components length: %d\n", total_components_length);
 
-        if (data_format == 5) {
+        else {
+            switch(data_format) {
+                case 2:
+                    _print_ascii_string_by_offset(image_file, ftell(image_file)-byte_alignment_offset, 4);
+                    break;
+
+                default:
+                    printf("%d\n", _read_4_byte_data_value(image_file));
+                    break;
+            }
+            continue;
+        }
+
+        if (data_format == 5 || data_format == 10) {
             _print_fract_value_by_offset(image_file, data_offset);
         }
         else if ((data_format == 1 || data_format == 3 || data_format == 4 || data_format == 6 || \
@@ -251,7 +264,6 @@ static int _print_ifd_entry_data(FILE *image_file)
             _print_value_by_offset(image_file, data_offset, total_components_length, n_components);
         }
         else if (n_components > 4 && data_format == 2) {
-            printf("data value: ");
             _print_ascii_string_by_offset(image_file, data_offset, n_components);
         }
     }
@@ -264,12 +276,12 @@ void jpg_print_exif_data(FILE *image_file)
 {
     _read_tiff_header(image_file);
 
-    printf("byte alignment offset: %d\n", byte_alignment_offset);
-    printf("tiff alignment: %s", byte_alignment);
+    printf("byte alignment: %s", byte_alignment);
     strcmp(byte_alignment, "MM") == 0 ? printf(" (Big Endian/Motorola)\n") : printf(" (Little Endian/Intel)\n");
-    printf("first IFD offset: %d\n", next_ifd_offset);
 
-    _print_ifd_entry_data(image_file);
+    FILE *csv_fp = fopen(JPG_EXIF_TAGS_FILEPATH, "rb");
+    _print_ifd_entry_data(image_file, csv_fp);
+    fclose(csv_fp);
 
 }
 
