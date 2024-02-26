@@ -49,14 +49,14 @@
 014c;Image.InkSet
 014d;Image.InkNames
 014e;Image.NumberOfInks
-0150;Image.DotRange	Byte
+0150;Image.DotRange
 0151;Image.TargetPrinter
 0152;Image.ExtraSamples
 0153;Image.SampleFormat
 0154;Image.SMinSampleValue
 0155;Image.SMaxSampleValue
 0156;Image.TransferRange
-0157;Image.ClipPath	Byte
+0157;Image.ClipPath
 0158;Image.XClipPathUnits
 0159;Image.YClipPathUnits
 015a;Image.Indexed
