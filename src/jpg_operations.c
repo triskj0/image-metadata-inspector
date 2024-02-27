@@ -243,6 +243,23 @@ static int _get_total_components_length(int format_value, int components_count)
 }
 
 
+static bool _data_format_is_fractional(int data_format)
+{
+    if (data_format == 5 || data_format == 10) return true;
+    return false;
+}
+
+
+static bool _data_format_is_int(int data_format)
+{
+    if (data_format == 1 || data_format == 3 || data_format == 4 || data_format == 6 || \
+        data_format == 7 || data_format == 8 || data_format == 9) {
+        return true;
+    }
+    return false;
+}
+
+
 // expects that the file pointer is right before the ifd starts
 // that is, before the number of directory entries
 // returns the offset to the next IFD
@@ -250,11 +267,6 @@ static int _print_ifd_entry_data(FILE *image_file, FILE *csv_fp)
 {
     static Exif_Tag_Array exif_tags = {0};
     int tag_number, data_format, n_components, data_offset, total_components_length;
-
-    //static int function_call_number = 0;
-    //function_call_number++;
-    //printf("\n\n ------------------ IFD number %d -------------------\n", function_call_number);
-
     int n_entries = HEX_MULTIPLIER * fgetc(image_file) + fgetc(image_file);
 
     for (int i = 0; i < n_entries; i++) {
@@ -289,11 +301,10 @@ static int _print_ifd_entry_data(FILE *image_file, FILE *csv_fp)
             continue;
         }
 
-        if (data_format == 5 || data_format == 10) {
+        if (_data_format_is_fractional(data_format)) {
             _print_fract_value_by_offset(image_file, data_offset);
         }
-        else if ((data_format == 1 || data_format == 3 || data_format == 4 || data_format == 6 || \
-                 data_format == 7 || data_format == 8 || data_format == 9) && total_components_length > 4) {
+        else if (_data_format_is_int(data_format) && total_components_length > 4) {
             _print_value_by_offset(image_file, data_offset, total_components_length, n_components);
         }
         else if (n_components > 4 && data_format == 2) {
