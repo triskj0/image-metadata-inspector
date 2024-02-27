@@ -16,6 +16,33 @@ static int byte_alignment_offset;
 static int next_ifd_offset;
 
 
+typedef struct {
+    int *tags;
+    size_t tags_count;
+    size_t capacity;
+} Exif_Tag_Array;
+
+
+#define tags_append(arr, tag)\
+    do {\
+        if (arr.tags_count >= arr.capacity) {\
+            if (arr.capacity == 0) arr.capacity = 256;\
+            else arr.capacity *= 2;\
+            arr.tags = realloc(arr.tags, arr.capacity * sizeof(*arr.tags));\
+        }\
+        arr.tags[arr.tags_count++] = tag;\
+    } while (0)
+
+
+static bool _tag_has_occured(Exif_Tag_Array arr, int tag)
+{
+    for (size_t i = 0; i < arr.tags_count; i++) {
+        if (arr.tags[i] == tag) return true;
+    }
+    return false;
+}
+
+
 static int _get_nth_power(int number, int power)
 {
     if (power == 0)
@@ -221,19 +248,25 @@ static int _get_total_components_length(int format_value, int components_count)
 // returns the offset to the next IFD
 static int _print_ifd_entry_data(FILE *image_file, FILE *csv_fp)
 {
-    int tag_number, data_format, n_components, data_value, data_offset, total_components_length;
+    static Exif_Tag_Array exif_tags = {0};
+    int tag_number, data_format, n_components, data_offset, total_components_length;
 
-    static int function_call_number = 0;
-    function_call_number++;
-    printf("\n\n ------------------ IFD number %d -------------------\n", function_call_number);
+    //static int function_call_number = 0;
+    //function_call_number++;
+    //printf("\n\n ------------------ IFD number %d -------------------\n", function_call_number);
 
     int n_entries = HEX_MULTIPLIER * fgetc(image_file) + fgetc(image_file);
-    printf("number of entries: %d\n", n_entries);
 
     for (int i = 0; i < n_entries; i++) {
         tag_number = _read_n_byte_int(image_file, 2);
         data_format = _read_n_byte_int(image_file, 2);
         n_components = _read_n_byte_int(image_file, 4);
+
+        if (!_tag_has_occured(exif_tags, tag_number)) tags_append(exif_tags, tag_number);
+        else {
+            fseek(image_file, 4, SEEK_CUR);
+            continue;
+        }
 
         char *tag_string = csv_get_string_by_value(csv_fp, tag_number);
         printf("%s: ", tag_string);
@@ -267,6 +300,15 @@ static int _print_ifd_entry_data(FILE *image_file, FILE *csv_fp)
             _print_ascii_string_by_offset(image_file, data_offset, n_components);
         }
     }
+
+    next_ifd_offset = _read_4_byte_data_value(image_file);
+    if (next_ifd_offset == 0) {
+        free(exif_tags.tags);
+        return 0;
+    }
+
+    _goto_file_offset(image_file, next_ifd_offset);
+    _print_ifd_entry_data(image_file, csv_fp);
 
     return 0;
 }
