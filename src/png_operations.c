@@ -85,7 +85,8 @@ KeywordsArray exif_keywords = {
 
 
 // index2 is non-inclusive
-static char *_slice_string(const char *str, int index1, int index2) {
+static char *_slice_string(const char *str, int index1, int index2)
+{
     int new_str_len = index2 - index1 + 1;
 
     char *new_str = malloc(new_str_len*sizeof(char));
@@ -100,7 +101,8 @@ static char *_slice_string(const char *str, int index1, int index2) {
 }
 
 
-char *get_filename(const char *path) {
+char *get_filename(const char *path)
+{
     int path_len = strlen(path);
     int last_slash_index = -1;
     char current;
@@ -124,7 +126,8 @@ char *get_filename(const char *path) {
 }
 
 
-char *get_filetype_extension(const char *filename) {
+char *get_filetype_extension(const char *filename)
+{
     int filename_len = (int) strlen(filename);
     int extension_start_index;
 
@@ -147,7 +150,8 @@ char *get_filetype_extension(const char *filename) {
 }
 
 
-int get_file_size(const char *path) {
+int get_file_size(const char *path)
+{
     struct stat file_status;
     if (stat(path, &file_status) < 0) {
         return -1;
@@ -156,7 +160,8 @@ int get_file_size(const char *path) {
 }
 
 
-char *get_last_change_date(const char *path) {
+char *get_last_change_date(const char *path)
+{
     struct stat file_status;
     if (stat(path, &file_status) < 0) {
         return "";
@@ -170,12 +175,14 @@ char *get_last_change_date(const char *path) {
 }
 
 
-static void _reset_file_pointer(FILE *image_file) {
+static void _reset_file_pointer(FILE *image_file)
+{
     fseek(image_file, SIGNATURE_END_INDEX+IHDR_LENGTH, SEEK_SET);
 }
 
 
-static bool _find_chunk(FILE *image_file, char name_char_0, char name_char_1, char name_char_2, char name_char_3) {
+static bool _find_chunk(FILE *image_file, char name_char_0, char name_char_1, char name_char_2, char name_char_3)
+{
     /* attempts to find a 4-character chunk name, stops at the last character of the name */
     int c0, c1, c2, c3;
 
@@ -196,7 +203,8 @@ static bool _find_chunk(FILE *image_file, char name_char_0, char name_char_1, ch
 }
 
 
-static int _get_4_byte_int(FILE *image_file) {
+static int _get_4_byte_int(FILE *image_file)
+{
     int c;
     int total = 0;
 
@@ -224,7 +232,8 @@ static int _get_4_byte_int(FILE *image_file) {
 }
 
 
-static bool _string_is_present_in_file(FILE *image_file, char *str) {
+static bool _string_is_present_in_file(FILE *image_file, char *str)
+{
     _reset_file_pointer(image_file);
 
     int str_char1 = str[0];
@@ -253,7 +262,8 @@ static bool _string_is_present_in_file(FILE *image_file, char *str) {
 }
 
 
-static void _indent_keyword_value(size_t keyword_length) {
+static void _indent_keyword_value(size_t keyword_length)
+{
     keyword_length++; // count in the colon after the keyword
 
     if (keyword_length < 5)
@@ -293,7 +303,8 @@ static void _verify_ihdr_data_validity(int height, int width, int bit_depth, int
 }
 
 
-int png_get_print_IHDR_chunk_data(FILE *image_file) {
+int png_get_print_IHDR_chunk_data(FILE *image_file)
+{
     int width, height, bit_depth, color_type, compression_method, filter_method, interlace_method;
 
     // skip png signature bytes + 4 length bytes + 4 chunk type (IHDR) bytes 
@@ -331,7 +342,8 @@ int png_get_print_IHDR_chunk_data(FILE *image_file) {
  *
  * ************************/
 
-static void _get_PLTE_data(FILE *image_file) {
+static void _get_PLTE_data(FILE *image_file)
+{
     int length = 0;
 
     // 4 bytes before "PLTE" are its length
@@ -345,7 +357,8 @@ static void _get_PLTE_data(FILE *image_file) {
 }
 
 
-void png_print_PLTE_chunk_data(FILE *image_file) {
+void png_print_PLTE_chunk_data(FILE *image_file)
+{
     _reset_file_pointer(image_file);
 
     if (!_find_chunk(image_file, 'P', 'L', 'T', 'E')) return;
@@ -362,7 +375,8 @@ void png_print_PLTE_chunk_data(FILE *image_file) {
  *
  * *********************/
 
-static void _print_text_element(FILE *image_file, int length) {
+static void _print_text_element(FILE *image_file, int length)
+{
     int c;
 
     for (int i = 0; i < length; i++) {
@@ -373,7 +387,8 @@ static void _print_text_element(FILE *image_file, int length) {
 }
 
 
-static void _parse_tEXt_chunk(FILE *image_file) {
+static void _parse_tEXt_chunk(FILE *image_file)
+{
     int c, length;
     int iteration = 0;
 
@@ -393,7 +408,8 @@ static void _parse_tEXt_chunk(FILE *image_file) {
 }
 
 
-void png_print_tEXt_chunk_data(FILE *image_file) {
+void png_print_tEXt_chunk_data(FILE *image_file)
+{
     static bool title_printed = false;
 
     /* tEXt has no ordering constraints,
@@ -422,7 +438,8 @@ void png_print_tEXt_chunk_data(FILE *image_file) {
  *
  * *********************/
 
-static void _print_bits_per_sample_data(FILE *image_file) {
+static void _print_bits_per_sample_data(FILE *image_file)
+{
     int c;
 
     fseek(image_file, BITS_PER_SAMPLE_NAME_DATA_DIST, SEEK_CUR);
@@ -438,7 +455,8 @@ static void _print_bits_per_sample_data(FILE *image_file) {
 }
 
 
-static void _print_iTXt_keyword_value(FILE *image_file, int keyword_length) {
+static void _print_iTXt_keyword_value(FILE *image_file, int keyword_length)
+{
     int c;
 
     fseek(image_file, keyword_length, SEEK_CUR);
@@ -453,7 +471,8 @@ static void _print_iTXt_keyword_value(FILE *image_file, int keyword_length) {
 }
 
 
-static void _print_exif_value(FILE *image_file, int *i, int chunk_length) {
+static void _print_exif_value(FILE *image_file, int *i, int chunk_length)
+{
     int c;
     bool is_subarray = false;
 
@@ -483,7 +502,8 @@ static void _print_exif_value(FILE *image_file, int *i, int chunk_length) {
 }
 
 
-static void _print_exif_data_within_itxt(FILE *image_file) {
+static void _print_exif_data_within_itxt(FILE *image_file)
+{
     int c, i;
     int chunk_length = 0;
     size_t keyword_length = 0;
@@ -526,7 +546,8 @@ static void _print_exif_data_within_itxt(FILE *image_file) {
 }
 
 
-static void _detect_individual_iTXt_metadata_keyword(FILE *image_file, char **keywords, size_t keywords_arr_length) {
+static void _detect_individual_iTXt_metadata_keyword(FILE *image_file, char **keywords, size_t keywords_arr_length)
+{
     int keyword_length, j;
     size_t i;
     int c = fgetc(image_file);
@@ -567,7 +588,8 @@ static void _detect_individual_iTXt_metadata_keyword(FILE *image_file, char **ke
 }
 
 
-static void _find_iTXt_metadata(FILE *image_file, size_t chunk_length, char **keywords, size_t keywords_length, char *metadata_name) {
+static void _find_iTXt_metadata(FILE *image_file, size_t chunk_length, char **keywords, size_t keywords_length, char *metadata_name)
+{
     // re-allign file pointer
     _reset_file_pointer(image_file);
     _find_chunk(image_file, 'i', 'T', 'X', 't');
@@ -602,7 +624,8 @@ static void _find_iTXt_metadata(FILE *image_file, size_t chunk_length, char **ke
 }
 
 
-void png_print_iTXt_chunk_data(FILE *image_file) {
+void png_print_iTXt_chunk_data(FILE *image_file)
+{
 
     _reset_file_pointer(image_file);
 
@@ -659,7 +682,8 @@ void png_print_iTXt_chunk_data(FILE *image_file) {
  *
  * *********************/
 
-static void _display_bKGD_color(FILE *image_file, int color_type) {
+static void _display_bKGD_color(FILE *image_file, int color_type)
+{
     int byte0, byte1, byte2;
 
     switch (color_type) {
@@ -685,7 +709,8 @@ static void _display_bKGD_color(FILE *image_file, int color_type) {
 }
 
 
-void png_print_bKGD_chunk_data(FILE *image_file, int color_type) {
+void png_print_bKGD_chunk_data(FILE *image_file, int color_type)
+{
     _reset_file_pointer(image_file);
 
     if (!_find_chunk(image_file, 'b', 'K', 'G', 'D')) return;
@@ -703,7 +728,8 @@ void png_print_bKGD_chunk_data(FILE *image_file, int color_type) {
  *
  * *********************/
 
-void png_print_cHRM_chunk_data(FILE *image_file) {
+void png_print_cHRM_chunk_data(FILE *image_file)
+{
     // calling this fn right after IHDR, no need for resetting file pointer
 
     if (!_find_chunk(image_file, 'c', 'H', 'R', 'M')) return;
@@ -745,7 +771,8 @@ void png_print_cHRM_chunk_data(FILE *image_file) {
  *
  * *********************/
 
-void png_print_sBIT_chunk_data(FILE *image_file, int color_type) {
+void png_print_sBIT_chunk_data(FILE *image_file, int color_type)
+{
     _reset_file_pointer(image_file);
     if (!_find_chunk(image_file, 's', 'B', 'I', 'T')) return;
 
@@ -796,7 +823,8 @@ void png_print_sBIT_chunk_data(FILE *image_file, int color_type) {
  *
  * *********************/
 
-void png_print_tRNS_chunk_data(FILE *image_file, int color_type) {
+void png_print_tRNS_chunk_data(FILE *image_file, int color_type)
+{
     _reset_file_pointer(image_file);
     if (!_find_chunk(image_file, 't', 'R', 'N', 'S')) return;
 
@@ -840,7 +868,8 @@ void png_print_tRNS_chunk_data(FILE *image_file, int color_type) {
  *
  * ********************/
 
-void png_print_sRGB_chunk_data(FILE *image_file) {
+void png_print_sRGB_chunk_data(FILE *image_file)
+{
     _reset_file_pointer(image_file);
     if (!_find_chunk(image_file, 's', 'R', 'G', 'B')) return;
 
@@ -879,7 +908,8 @@ void png_print_sRGB_chunk_data(FILE *image_file) {
  *
  * ********************/
 
-void png_print_eXIf_chunk_data(FILE *image_file) {
+void png_print_eXIf_chunk_data(FILE *image_file)
+{
     _reset_file_pointer(image_file);
 
     if (!_find_chunk(image_file, 'e', 'X', 'I', 'f')) return;
@@ -931,7 +961,8 @@ void png_print_eXIf_chunk_data(FILE *image_file) {
  *
  * ***********************/
 
-void png_search_for_common_private_chunks(FILE *image_file) {
+void png_search_for_common_private_chunks(FILE *image_file)
+{
     char *private_chunks_names[] = {
         "prVW",
         "mkBF",
@@ -977,7 +1008,8 @@ void png_search_for_common_private_chunks(FILE *image_file) {
  *
  * *********************/
 
-void png_print_gAMA_chunk_data(FILE *image_file) {
+void png_print_gAMA_chunk_data(FILE *image_file)
+{
     _reset_file_pointer(image_file);
     
     if (!_find_chunk(image_file, 'g', 'A', 'M', 'A')) return;
@@ -988,7 +1020,8 @@ void png_print_gAMA_chunk_data(FILE *image_file) {
 }
 
 
-void png_print_pHYs_chunk_data(FILE *image_file) {
+void png_print_pHYs_chunk_data(FILE *image_file)
+{
     _reset_file_pointer(image_file);
     if (!_find_chunk(image_file, 'p', 'H', 'Y', 's')) return;
 
@@ -1005,7 +1038,8 @@ void png_print_pHYs_chunk_data(FILE *image_file) {
 }
 
 
-void png_print_tIME_chunk_data(FILE *image_file) {
+void png_print_tIME_chunk_data(FILE *image_file)
+{
     _reset_file_pointer(image_file);
     if (!_find_chunk(image_file, 't', 'I', 'M', 'E')) return;
 

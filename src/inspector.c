@@ -12,12 +12,14 @@
 #define COULD_NOT_OPEN_FILE_ERROR "[ERROR] file could not be opened.\n\n"
 
 
-void print_jpg_metadata(FILE *image_file) {
+void print_jpg_metadata(FILE *image_file)
+{
     jpg_print_exif_data(image_file);
 }
 
 
-void print_png_metadata(FILE *image_file) {
+void print_png_metadata(FILE *image_file)
+{
 
     int color_type = png_get_print_IHDR_chunk_data(image_file);
     png_print_cHRM_chunk_data(image_file);
@@ -37,7 +39,8 @@ void print_png_metadata(FILE *image_file) {
 }
 
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv)
+{
     
     if (argc < 2) {
         fprintf(stderr, USAGE, get_filename(argv[0]));
