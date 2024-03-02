@@ -183,8 +183,6 @@ static void _read_tiff_header(FILE *image_file)
 
     fseek(image_file, 3, SEEK_CUR);   // skip the next I or M and 0x002A or 0x2A00
     next_ifd_offset = _read_n_byte_int(image_file, 4);
-    printf("#next ifd offset: %d\n", next_ifd_offset);
-
 }
 
 
@@ -432,6 +430,185 @@ static void _print_exposure_mode(FILE *image_file)
 }
 
 
+static void _print_white_balance(FILE *image_file)
+{
+    // the possible results overlap,
+    // so we can just call this function
+    _print_exposure_mode(image_file);
+}
+
+
+static void _print_focal_length_in_35_mm(FILE *image_file)
+{
+    int c, i;
+
+    for (i = 0; i < 4; i++) {
+        c = _read_n_byte_int(image_file, 1);
+
+        if (c == 0)
+            continue;
+
+        fseek(image_file, 3-i, SEEK_CUR);
+        printf("%dmm\n", c);
+        return;
+    }
+}
+
+
+static void _printf_scene_capture_type(FILE *image_file)
+{
+    int c, i;
+
+    for (i = 0; i < 4; i++) {
+        c = _read_n_byte_int(image_file, 1);
+
+        if (c > 4)
+            continue;
+
+        fseek(image_file, 3-i, SEEK_CUR);
+        switch (c) {
+            case 0:
+                printf("None (%d)\n", c);
+                return;
+
+            case 1:
+                printf("landscape (%d)\n", c);
+                return;
+
+            case 2:
+                printf("portrait (%d)\n", c);
+                return;
+
+            case 3:
+                printf("night (%d)\n", c);
+                return;
+
+            case 4:
+                printf("other (%d)\n", c);
+                return;
+        }
+    }
+}
+
+
+static void _print_gain_control(FILE *image_file)
+{
+    int c, i;
+
+    for (i = 0; i < 4; i++) {
+        c = _read_n_byte_int(image_file, 1);
+
+        if (c > 4)
+            continue;
+
+        fseek(image_file, 3-i, SEEK_CUR);
+        switch (c) {
+            case 0:
+                printf("None (%d)\n", c);
+                return;
+
+            case 1:
+                printf("low gain up (%d)\n", c);
+                return;
+
+            case 2:
+                printf("high gain up (%d)\n", c);
+                return;
+
+            case 3:
+                printf("low gain down (%d)\n", c);
+                return;
+
+            case 4:
+                printf("high gain down (%d)\n", c);
+                return;
+        }
+    }
+}
+
+
+static void _print_contrast(FILE *image_file)
+{
+    int c, i;
+
+    for (i = 0; i < 4; i++) {
+        c = _read_n_byte_int(image_file, 1);
+
+        if (c > 2)
+            continue;
+
+        fseek(image_file, 3-i, SEEK_CUR);
+        switch (c) {
+            case 0:
+                printf("normal (%d)\n", c);
+                return;
+
+            case 1:
+                printf("low (%d)\n", c);
+                return;
+
+            case 2:
+                printf("high (%d)\n", c);
+                return;
+        }
+    }
+}
+
+
+static void _print_saturation(FILE *image_file)
+{
+    // the possible outcomes are the same as with contrast,
+    // so we can reause that function
+    _print_contrast(image_file);
+}
+
+
+static void _print_sharpness(FILE *image_file)
+{
+    // also shares the same outcomes with the contrast tag
+    _print_contrast(image_file);
+}
+
+
+static int _detect_tags_with_their_own_functions(FILE *image_file, int tag_number)
+{
+    if (tag_number == 0x0128)
+        _print_resolution_unit(image_file);
+
+    else if (tag_number == 0x0213)
+        _print_ycbcr_positioning(image_file);
+
+    else if (tag_number == 0xa401)
+        _print_custom_rendered(image_file);
+
+    else if (tag_number == 0xa402)
+        _print_exposure_mode(image_file);
+
+    else if (tag_number == 0xa403)
+        _print_white_balance(image_file);
+
+    else if (tag_number == 0xa405)
+        _print_focal_length_in_35_mm(image_file);
+
+    else if (tag_number == 0xa406)
+        _printf_scene_capture_type(image_file);
+
+    else if (tag_number == 0xa407)
+        _print_gain_control(image_file);
+
+    else if (tag_number == 0xa408)
+        _print_contrast(image_file);
+
+    else if (tag_number == 0xa409)
+        _print_saturation(image_file);
+
+    else if (tag_number == 0xa40a)
+        _print_sharpness(image_file);
+
+    else return 1;
+    return 0;
+}
+
 // expects that the file pointer is right before the ifd starts
 // that is, before the number of directory entries
 // returns the offset to the next IFD
@@ -440,7 +617,6 @@ static int _print_ifd_entry_data(FILE *image_file, FILE *csv_fp)
     static Exif_Tag_Array exif_tags = {0};
     int tag_number, data_format, n_components, data_offset, total_components_length;
     int n_entries = _read_n_byte_int(image_file, 2);
-    //printf("#number of entries: %d\n", n_entries);
 
     for (int i = 0; i < n_entries; i++) {
         tag_number = _read_n_byte_int(image_file, 2);
@@ -462,23 +638,8 @@ static int _print_ifd_entry_data(FILE *image_file, FILE *csv_fp)
         _indent_result(strlen(tag_string));
         free(tag_string);
 
-        if (tag_number == 0x0128) {
-            // resolution unit is sometimes stored in a very unexpected way, this should combat that
-            _print_resolution_unit(image_file);
+        if (_detect_tags_with_their_own_functions(image_file, tag_number) == 0)
             continue;
-        }
-        else if (tag_number == 0x0213) {
-            _print_ycbcr_positioning(image_file);
-            continue;
-        }
-        else if (tag_number == 0xa401) {
-            _print_custom_rendered(image_file);
-            continue;
-        }
-        else if (tag_number == 0xa402) {
-            _print_exposure_mode(image_file);
-            continue;
-        }
 
         if ((total_components_length = _get_total_components_length(data_format, n_components)) > 4) {
             data_offset = _read_n_byte_int(image_file, 4);
