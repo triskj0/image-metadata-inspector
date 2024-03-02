@@ -83,7 +83,7 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }
 
-    if (strcmp(extension, "jpg") == 0 || strcmp(extension, "JPG") == 0)
+    if (strcmp(extension, "jpg") == 0 || strcmp(extension, "JPG") == 0 || strcmp(extension, "jfif") == 0)
         print_jpg_metadata(image_file);
     else print_png_metadata(image_file);
 

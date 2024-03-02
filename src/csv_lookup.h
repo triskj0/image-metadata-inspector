@@ -3,4 +3,4 @@
 
 char *csv_get_string_by_value(FILE *, int);
 
-#endif
+#endif // CSV_LOOKUP_H

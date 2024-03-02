@@ -16,7 +16,7 @@
 #define BITS_PER_SAMPLE_NAME_DATA_DIST 59
 #define BITS_PER_SAMPLE_DATA_DIST 33
 
-#define INCORRECT_FILETYPE_ERROR "\n[ERROR] The filetype has to be \"png\", not \"%s\".\n\n"
+#define INCORRECT_FILETYPE_ERROR "\n[ERROR] The filetype has to be \"png\", \"jpg\", or \"jfif\" - not \"%s\".\n\n"
 #define COULD_NOT_READ_IHDR_ERROR "\n[ERROR] The specified file wasn't read successfully, it may be corrupted.\
                 \n\tThere has been an error while trying to read the header chunk.\n\n"
 
@@ -140,7 +140,8 @@ char *get_filetype_extension(const char *filename)
     char *extension = _slice_string(filename, extension_start_index, filename_len);
 
     if (strcmp(extension, "png") != 0 && strcmp(extension, "PNG") != 0 &&\
-            strcmp(extension, "jpg") != 0 && strcmp(extension, "JPG") != 0) {
+            strcmp(extension, "jpg") != 0 && strcmp(extension, "JPG") != 0 &&
+            strcmp(extension, "jfif") != 0) {
 
         fprintf(stderr, INCORRECT_FILETYPE_ERROR, extension);
         exit(EXIT_FAILURE);

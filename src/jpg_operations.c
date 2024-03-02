@@ -78,11 +78,22 @@ static int _read_n_byte_int(FILE *image_file, int n)
     int c;
     int total = 0;
 
-    for (int i = n; i > 0; i--) {
+    if (strcmp(byte_alignment, "MM") == 0) {
+        for (int i = n; i > 0; i--) {
+            c = fgetc(image_file);
+
+            total += _get_single_digit_from_byte(1, c) * _get_nth_power(HEX_MULTIPLIER, i*2-1);
+            total += _get_single_digit_from_byte(2, c) * _get_nth_power(HEX_MULTIPLIER, i*2-2);
+        }
+
+        return total;
+    }
+
+    for (int i = 0; i < n; i++) {
         c = fgetc(image_file);
 
-        total += _get_single_digit_from_byte(1, c) * _get_nth_power(HEX_MULTIPLIER, i*2-1);
-        total += _get_single_digit_from_byte(2, c) * _get_nth_power(HEX_MULTIPLIER, i*2-2);
+        total += _get_single_digit_from_byte(1, c) * _get_nth_power(HEX_MULTIPLIER, i*2+1);
+        total += _get_single_digit_from_byte(2, c) * _get_nth_power(HEX_MULTIPLIER, i*2);
     }
 
     return total;
@@ -93,6 +104,10 @@ static int _read_n_byte_int(FILE *image_file, int n)
 // available bytes, so reading all 4 can result in incorrect data
 static int _read_4_byte_data_value(FILE *image_file)
 {
+    if (strcmp(byte_alignment, "II") == 0) {
+        return _read_n_byte_int(image_file, 4);
+    }
+
     int val, val2;
 
     val = _read_n_byte_int(image_file, 2);
@@ -168,6 +183,7 @@ static void _read_tiff_header(FILE *image_file)
 
     fseek(image_file, 3, SEEK_CUR);   // skip the next I or M and 0x002A or 0x2A00
     next_ifd_offset = _read_n_byte_int(image_file, 4);
+    printf("#next ifd offset: %d\n", next_ifd_offset);
 
 }
 
@@ -243,6 +259,27 @@ static int _get_total_components_length(int format_value, int components_count)
 }
 
 
+static void _indent_result(size_t keyword_length)
+{
+    keyword_length++; // count in a colon
+
+    if (keyword_length < 5)
+        printf("\t\t\t\t\t");
+
+    else if (keyword_length < 8)
+        printf("\t\t\t\t");
+
+    else if (keyword_length < 16)
+        printf("\t\t\t");
+
+    else if (keyword_length < 20)
+        printf("\t\t");
+
+    else if (keyword_length < 28)
+        putchar('\t');
+}
+
+
 static bool _data_format_is_fractional(int data_format)
 {
     if (data_format == 5 || data_format == 10) return true;
@@ -260,6 +297,141 @@ static bool _data_format_is_int(int data_format)
 }
 
 
+static void _print_resolution_unit(FILE *image_file)
+{
+    int c, i;
+
+    for (i = 0; i < 4; i++) {
+        c = _read_n_byte_int(image_file, 1);
+
+        if (c == 0)
+            continue;
+
+        if (c > 3)
+            continue;
+
+        fseek(image_file, 3-i, SEEK_CUR);
+
+        switch (c) {
+            case 1:
+                printf("None (%d)\n", c);
+                break;
+
+            case 2:
+                printf("inches (%d)\n", c);
+                break;
+
+            case 3:
+                printf("cm (%d)\n", c);
+                break;
+        }
+        return;
+    }
+}
+
+
+static void _print_ycbcr_positioning(FILE *image_file)
+{
+    int c, i;
+
+    for (i = 0; i < 4; i++) {
+        c = _read_n_byte_int(image_file, 1);
+
+        if (c != 1 && c != 2)
+            continue;
+
+        fseek(image_file, 3-i, SEEK_CUR);
+
+        switch (c) {
+            case 1:
+                printf("centered (%d)\n", c);
+                return;
+
+            case 2:
+                printf("co-sited (%d)\n", c);
+                return;
+        }
+    }
+}
+
+
+static void _print_custom_rendered(FILE *image_file)
+{
+        int c, i;
+
+        for (i = 0; i < 4; i++) {
+            c = _read_n_byte_int(image_file, 1);
+
+            if (c > 8)
+                continue;
+
+            fseek(image_file, 3-i, SEEK_CUR);
+            switch (c) {
+                case 0:
+                    printf("normal (%d)\n", i);
+                    return;
+
+                case 1:
+                    printf("custom (%d)\n", i);
+                    return;
+
+                case 2:
+                    printf("HDR - no original saved (%d)\n", i);
+                    return;
+
+                case 3:
+                    printf("HDR - original saved (%d)\n", i);
+                    return;
+
+                case 4:
+                    printf("original - for HDR (%d)\n", i);
+                    return;
+
+                case 5:
+                    printf("panorama (%d)\n", i);
+                    return;
+
+                case 6:
+                    printf("portrait HDR (%d)\n", i);
+                    return;
+
+                case 7:
+                    printf("portrait HDR (%d)\n", i);
+                    return;
+
+                case 8:
+                    printf("portrait (%d)\n", i);
+                    return;
+            }
+        }
+}
+
+
+static void _print_exposure_mode(FILE *image_file)
+{
+    int c, i;
+
+    for (i = 0; i < 4; i++) {
+        c = _read_n_byte_int(image_file, 1);
+
+        fseek(image_file, 3-i, SEEK_CUR);
+        switch (c) {
+            case 0:
+                printf("auto (%d)\n", i);
+                return;
+
+            case 1:
+                printf("manual (%d)\n", i);
+                return;
+
+            case 2:
+                printf("auto bracket (%d)\n", i);
+                return;
+        }
+    }
+}
+
+
 // expects that the file pointer is right before the ifd starts
 // that is, before the number of directory entries
 // returns the offset to the next IFD
@@ -267,12 +439,17 @@ static int _print_ifd_entry_data(FILE *image_file, FILE *csv_fp)
 {
     static Exif_Tag_Array exif_tags = {0};
     int tag_number, data_format, n_components, data_offset, total_components_length;
-    int n_entries = HEX_MULTIPLIER * fgetc(image_file) + fgetc(image_file);
+    int n_entries = _read_n_byte_int(image_file, 2);
+    //printf("#number of entries: %d\n", n_entries);
 
     for (int i = 0; i < n_entries; i++) {
         tag_number = _read_n_byte_int(image_file, 2);
         data_format = _read_n_byte_int(image_file, 2);
         n_components = _read_n_byte_int(image_file, 4);
+
+        //printf("\ntag number: %x\n", tag_number);
+        //printf("data format: %d\n", data_format);
+        //printf("n. components: %d\n", n_components);
 
         if (!_tag_has_occured(exif_tags, tag_number)) tags_append(exif_tags, tag_number);
         else {
@@ -282,12 +459,30 @@ static int _print_ifd_entry_data(FILE *image_file, FILE *csv_fp)
 
         char *tag_string = csv_get_string_by_value(csv_fp, tag_number);
         printf("%s: ", tag_string);
+        _indent_result(strlen(tag_string));
         free(tag_string);
+
+        if (tag_number == 0x0128) {
+            // resolution unit is sometimes stored in a very unexpected way, this should combat that
+            _print_resolution_unit(image_file);
+            continue;
+        }
+        else if (tag_number == 0x0213) {
+            _print_ycbcr_positioning(image_file);
+            continue;
+        }
+        else if (tag_number == 0xa401) {
+            _print_custom_rendered(image_file);
+            continue;
+        }
+        else if (tag_number == 0xa402) {
+            _print_exposure_mode(image_file);
+            continue;
+        }
 
         if ((total_components_length = _get_total_components_length(data_format, n_components)) > 4) {
             data_offset = _read_n_byte_int(image_file, 4);
         }
-
         else {
             switch(data_format) {
                 case 2:
@@ -329,12 +524,11 @@ void jpg_print_exif_data(FILE *image_file)
 {
     _read_tiff_header(image_file);
 
-    printf("byte alignment: %s", byte_alignment);
+    printf("byte alignment:\t\t\t%s", byte_alignment);
     strcmp(byte_alignment, "MM") == 0 ? printf(" (Big Endian/Motorola)\n") : printf(" (Little Endian/Intel)\n");
 
     FILE *csv_fp = fopen(JPG_EXIF_TAGS_FILEPATH, "rb");
     _print_ifd_entry_data(image_file, csv_fp);
     fclose(csv_fp);
-
 }
 
