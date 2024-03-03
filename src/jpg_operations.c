@@ -609,6 +609,7 @@ static int _detect_tags_with_their_own_functions(FILE *image_file, int tag_numbe
     return 0;
 }
 
+
 // expects that the file pointer is right before the ifd starts
 // that is, before the number of directory entries
 // returns the offset to the next IFD
@@ -622,10 +623,6 @@ static int _print_ifd_entry_data(FILE *image_file, FILE *csv_fp)
         tag_number = _read_n_byte_int(image_file, 2);
         data_format = _read_n_byte_int(image_file, 2);
         n_components = _read_n_byte_int(image_file, 4);
-
-        //printf("\ntag number: %x\n", tag_number);
-        //printf("data format: %d\n", data_format);
-        //printf("n. components: %d\n", n_components);
 
         if (!_tag_has_occured(exif_tags, tag_number)) tags_append(exif_tags, tag_number);
         else {
@@ -644,18 +641,14 @@ static int _print_ifd_entry_data(FILE *image_file, FILE *csv_fp)
         if ((total_components_length = _get_total_components_length(data_format, n_components)) > 4) {
             data_offset = _read_n_byte_int(image_file, 4);
         }
-        else {
-            switch(data_format) {
-                case 2:
-                    _print_ascii_string_by_offset(image_file, ftell(image_file)-byte_alignment_offset, 4);
-                    break;
+        else if (data_format == 2) {
+            _print_ascii_string_by_offset(image_file, ftell(image_file)-byte_alignment_offset, 4);
 
-                default:
-                    printf("%d\n", _read_4_byte_data_value(image_file));
-                    break;
-            }
-            continue;
         }
+        else {
+            printf("%d\n", _read_4_byte_data_value(image_file));
+        }
+
 
         if (_data_format_is_fractional(data_format)) {
             _print_fract_value_by_offset(image_file, data_offset);
