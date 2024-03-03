@@ -1,0 +1,50 @@
+0001;uncompressed
+0002;CCITT 1D
+0003;T4/Group 3 Fax
+0004;T6/Group 4 Fax
+0005;LZW
+0006;JPEG (old-style)
+0007;JPEG
+0008;Adobe Deflate
+0009;JBIG B&W
+000a;JBIG Color
+0063;JPEG
+0106;Kodak 262
+7ffe;next
+7fff;Sony ARW Compressed
+8001;packed RAW
+8002;Samsung SRW Compressed
+8003;CCIRLEW
+8004;Samsung SRW Compressed 2
+8005;PackBits
+8029;Thunderscan
+8063;Kodak KDC Compressed
+807f;IT8CTPAD
+8080;IT8LW
+8081;IT8MP
+8082;IT8BL
+808c;PixarFilm
+808d;PixarLog
+80b2;Deflate
+80b3;DCS
+80eb;Aperio JPEG 2000 YCbCr
+80ed;Aperio JPEG 2000 RGB
+8765;JBIG
+8774;SGILog
+8775;SGILog24
+8798;JPEG 2000
+8799;Nikon NEF Compressed
+879b;JBIG2 TIFF FX
+879e;Microsoft Document Imaging (MDI) Binary Level Codec
+879f;Microsoft Document Imaging (MDI) Progressive Transform Codec
+87a0;Microsoft Document Imaging (MDI) Vector
+8847;ESRI Lerc
+884c;lossy JPEG
+886d;LZMA2
+886e;zstd
+886f;webp
+8875;PNG
+8876;JPEG XR
+cd42;JPEG XL
+fde8;Kodak DCR Compressed
+ffff;Pentax PEF Compressed

@@ -9,7 +9,8 @@
 #include "csv_lookup.h"
 #define HEX_MULTIPLIER        16
 #define HEX_MULTIPLIER_POW_2 256
-#define JPG_EXIF_TAGS_FILEPATH "./jpg_exif_tags.csv"
+#define JPG_EXIF_TAGS_FILEPATH "./csv/jpg_exif_tags.csv"
+#define EXIF_COMPRESSION_TAGS_FILEPATH "./csv/exif_compression_tags.csv"
 
 static char byte_alignment[3];
 static int byte_alignment_offset;
@@ -570,7 +571,63 @@ static void _print_sharpness(FILE *image_file)
 }
 
 
-static int _detect_tags_with_their_own_functions(FILE *image_file, int tag_number)
+static void _print_orientation(FILE *image_file)
+{
+    int value = _read_n_byte_int(image_file, 4);
+
+    switch (value) {
+        case 0:
+            printf("unknown (0)\n");
+            return;
+
+        case 1:
+            printf("normal - horizontal (1)\n");
+            return;
+
+        case 2:
+            printf("mirror horizontal (2)\n");
+            return;
+
+        case 3:
+            printf("rotate 180 (3)\n");
+            return;
+
+        case 4:
+            printf("mirror vertical (4)\n");
+            return;
+
+        case 5:
+            printf("mirror horizontal and rotate 270 CW (5)\n");
+            return;
+
+        case 6:
+            printf("rotate 90 CW (6)\n");
+            return;
+
+        case 7:
+            printf("mirror horizontal and rotate 270 CW (7)\n");
+            return;
+
+        case 8:
+            printf("rotate 270 CW (8)\n");
+            return;
+    }
+}
+
+
+static void _print_compression(FILE *image_file)
+{
+
+    FILE *csv_fp = fopen(EXIF_COMPRESSION_TAGS_FILEPATH, "rb");
+    int key = _read_4_byte_data_value(image_file);
+    char *result_str = csv_get_string_by_value(csv_fp, key);
+    fclose(csv_fp);
+
+    printf("%s\n", result_str);
+}
+
+
+static bool _detect_tags_with_their_own_functions(FILE *image_file, int tag_number)
 {
     if (tag_number == 0x0128)
         _print_resolution_unit(image_file);
@@ -605,8 +662,14 @@ static int _detect_tags_with_their_own_functions(FILE *image_file, int tag_numbe
     else if (tag_number == 0xa40a)
         _print_sharpness(image_file);
 
-    else return 1;
-    return 0;
+    else if (tag_number == 0x0112)
+        _print_orientation(image_file);
+
+    else if (tag_number == 0x0103)
+        _print_compression(image_file);
+
+    else return false;
+    return true;
 }
 
 
@@ -631,11 +694,17 @@ static int _print_ifd_entry_data(FILE *image_file, FILE *csv_fp)
         }
 
         char *tag_string = csv_get_string_by_value(csv_fp, tag_number);
+
+        if (strcmp(tag_string, "") == 0) {
+            free(tag_string);
+            continue;
+        }
+
         printf("%s: ", tag_string);
         _indent_result(strlen(tag_string));
         free(tag_string);
 
-        if (_detect_tags_with_their_own_functions(image_file, tag_number) == 0)
+        if (_detect_tags_with_their_own_functions(image_file, tag_number))
             continue;
 
         if ((total_components_length = _get_total_components_length(data_format, n_components)) > 4) {
@@ -643,10 +712,11 @@ static int _print_ifd_entry_data(FILE *image_file, FILE *csv_fp)
         }
         else if (data_format == 2) {
             _print_ascii_string_by_offset(image_file, ftell(image_file)-byte_alignment_offset, 4);
-
+            continue;
         }
         else {
             printf("%d\n", _read_4_byte_data_value(image_file));
+            continue;
         }
 
 

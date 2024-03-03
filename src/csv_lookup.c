@@ -24,7 +24,7 @@ static void _goto_next_line(FILE *csv_fp)
 {
     char c;
 
-    while ((c = fgetc(csv_fp)) != '\n') {
+    while ((c = fgetc(csv_fp)) != '\n' && c != EOF) {
         ;
     }
 }
@@ -60,6 +60,7 @@ static int _get_int_from_hex_char(char str_number)
         return str_number - 'a' + 10;
     }
 
+    printf("%c  ", str_number);
     return -1;
 }
 
@@ -69,11 +70,13 @@ static int _read_key(FILE *csv_fp)
 {
     int c;
     int total = 0;
-    
+
     for (int i = 4; i > 0; i--) {
-        c = _get_int_from_hex_char(fgetc(csv_fp));
+        char str_number = fgetc(csv_fp);
+        c = _get_int_from_hex_char(str_number);
         
         if (c == -1) {
+            printf("%c\n", c);
             fprintf(stderr, "[ERROR] Could not decode hex tag number from"
                     " file storing exif tags.\n%s : %d\n", __FILE__, __LINE__);
             exit(EXIT_FAILURE);
