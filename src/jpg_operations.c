@@ -11,6 +11,9 @@
 #define HEX_MULTIPLIER_POW_2 256
 #define JPG_EXIF_TAGS_FILEPATH "./csv/jpg_exif_tags.csv"
 #define EXIF_COMPRESSION_TAGS_FILEPATH "./csv/exif_compression_tags.csv"
+#define CUSTOM_RENDERED_TAGS_FILEPATH "./csv/custom_rendered_tags.csv"
+#define ORIENTATION_TAGS_FILEPATH "./csv/orientation_tags.csv"
+#define SCENE_CAPTURE_TAGS_FILEPATH "./csv/scene_capture_tags.csv"
 
 static char byte_alignment[3];
 static int byte_alignment_offset;
@@ -313,15 +316,15 @@ static void _print_resolution_unit(FILE *image_file)
 
         switch (c) {
             case 1:
-                printf("None (%d)\n", c);
+                printf("None\n");
                 break;
 
             case 2:
-                printf("inches (%d)\n", c);
+                printf("inches\n");
                 break;
 
             case 3:
-                printf("cm (%d)\n", c);
+                printf("cm\n");
                 break;
         }
         return;
@@ -343,11 +346,11 @@ static void _print_ycbcr_positioning(FILE *image_file)
 
         switch (c) {
             case 1:
-                printf("centered (%d)\n", c);
+                printf("centered\n");
                 return;
 
             case 2:
-                printf("co-sited (%d)\n", c);
+                printf("co-sited\n");
                 return;
         }
     }
@@ -356,53 +359,26 @@ static void _print_ycbcr_positioning(FILE *image_file)
 
 static void _print_custom_rendered(FILE *image_file)
 {
-        int c, i;
+    int c, i;
+    FILE *csv_fp = fopen(CUSTOM_RENDERED_TAGS_FILEPATH, "rb");
 
-        for (i = 0; i < 4; i++) {
-            c = _read_n_byte_int(image_file, 1);
 
-            if (c > 8)
-                continue;
+    for (i = 0; i < 4; i++) {
+        c = _read_n_byte_int(image_file, 1);
 
-            fseek(image_file, 3-i, SEEK_CUR);
-            switch (c) {
-                case 0:
-                    printf("normal (%d)\n", i);
-                    return;
+        if (c > 8 || c == 5)
+            continue;
 
-                case 1:
-                    printf("custom (%d)\n", i);
-                    return;
+        break;
+    }
 
-                case 2:
-                    printf("HDR - no original saved (%d)\n", i);
-                    return;
+    fseek(image_file, 3-i, SEEK_CUR);
+    char *result = csv_get_string_by_value(csv_fp, c);
+    if (strcmp(result, "") == 0) return;
 
-                case 3:
-                    printf("HDR - original saved (%d)\n", i);
-                    return;
-
-                case 4:
-                    printf("original - for HDR (%d)\n", i);
-                    return;
-
-                case 5:
-                    printf("panorama (%d)\n", i);
-                    return;
-
-                case 6:
-                    printf("portrait HDR (%d)\n", i);
-                    return;
-
-                case 7:
-                    printf("portrait HDR (%d)\n", i);
-                    return;
-
-                case 8:
-                    printf("portrait (%d)\n", i);
-                    return;
-            }
-        }
+    printf("%s\n", result);
+    fclose(csv_fp);
+    free(result);
 }
 
 
@@ -416,15 +392,15 @@ static void _print_exposure_mode(FILE *image_file)
         fseek(image_file, 3-i, SEEK_CUR);
         switch (c) {
             case 0:
-                printf("auto (%d)\n", i);
+                printf("auto\n");
                 return;
 
             case 1:
-                printf("manual (%d)\n", i);
+                printf("manual\n");
                 return;
 
             case 2:
-                printf("auto bracket (%d)\n", i);
+                printf("auto bracket\n");
                 return;
         }
     }
@@ -456,7 +432,7 @@ static void _print_focal_length_in_35_mm(FILE *image_file)
 }
 
 
-static void _printf_scene_capture_type(FILE *image_file)
+static void _print_scene_capture_type(FILE *image_file)
 {
     int c, i;
 
@@ -466,29 +442,18 @@ static void _printf_scene_capture_type(FILE *image_file)
         if (c > 4)
             continue;
 
-        fseek(image_file, 3-i, SEEK_CUR);
-        switch (c) {
-            case 0:
-                printf("None (%d)\n", c);
-                return;
-
-            case 1:
-                printf("landscape (%d)\n", c);
-                return;
-
-            case 2:
-                printf("portrait (%d)\n", c);
-                return;
-
-            case 3:
-                printf("night (%d)\n", c);
-                return;
-
-            case 4:
-                printf("other (%d)\n", c);
-                return;
-        }
+        break;
     }
+    
+    fseek(image_file, 3-i, SEEK_CUR);
+    FILE *csv_fp = fopen(SCENE_CAPTURE_TAGS_FILEPATH, "rb");
+    
+    char *result = csv_get_string_by_value(csv_fp, c);
+    if (strcmp(result, "") == 0) return;
+
+    printf("%s\n", result);
+    free(result);
+    fclose(csv_fp);
 }
 
 
@@ -505,23 +470,23 @@ static void _print_gain_control(FILE *image_file)
         fseek(image_file, 3-i, SEEK_CUR);
         switch (c) {
             case 0:
-                printf("None (%d)\n", c);
+                printf("None\n");
                 return;
 
             case 1:
-                printf("low gain up (%d)\n", c);
+                printf("low gain up\n");
                 return;
 
             case 2:
-                printf("high gain up (%d)\n", c);
+                printf("high gain up\n");
                 return;
 
             case 3:
-                printf("low gain down (%d)\n", c);
+                printf("low gain down\n");
                 return;
 
             case 4:
-                printf("high gain down (%d)\n", c);
+                printf("high gain down\n");
                 return;
         }
     }
@@ -541,15 +506,15 @@ static void _print_contrast(FILE *image_file)
         fseek(image_file, 3-i, SEEK_CUR);
         switch (c) {
             case 0:
-                printf("normal (%d)\n", c);
+                printf("normal\n");
                 return;
 
             case 1:
-                printf("low (%d)\n", c);
+                printf("low\n");
                 return;
 
             case 2:
-                printf("high (%d)\n", c);
+                printf("high\n");
                 return;
         }
     }
@@ -574,44 +539,14 @@ static void _print_sharpness(FILE *image_file)
 static void _print_orientation(FILE *image_file)
 {
     int value = _read_n_byte_int(image_file, 4);
+    FILE *csv_fp = fopen(ORIENTATION_TAGS_FILEPATH, "rb");
 
-    switch (value) {
-        case 0:
-            printf("unknown (0)\n");
-            return;
+    char *result = csv_get_string_by_value(csv_fp, value);
+    if (strcmp(result, "") == 0) return;
 
-        case 1:
-            printf("normal - horizontal (1)\n");
-            return;
-
-        case 2:
-            printf("mirror horizontal (2)\n");
-            return;
-
-        case 3:
-            printf("rotate 180 (3)\n");
-            return;
-
-        case 4:
-            printf("mirror vertical (4)\n");
-            return;
-
-        case 5:
-            printf("mirror horizontal and rotate 270 CW (5)\n");
-            return;
-
-        case 6:
-            printf("rotate 90 CW (6)\n");
-            return;
-
-        case 7:
-            printf("mirror horizontal and rotate 270 CW (7)\n");
-            return;
-
-        case 8:
-            printf("rotate 270 CW (8)\n");
-            return;
-    }
+    printf("%s\n", result);
+    free(result);
+    fclose(csv_fp);
 }
 
 
@@ -648,7 +583,7 @@ static bool _detect_tags_with_their_own_functions(FILE *image_file, int tag_numb
         _print_focal_length_in_35_mm(image_file);
 
     else if (tag_number == 0xa406)
-        _printf_scene_capture_type(image_file);
+        _print_scene_capture_type(image_file);
 
     else if (tag_number == 0xa407)
         _print_gain_control(image_file);

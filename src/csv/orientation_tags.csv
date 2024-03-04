@@ -1,0 +1,9 @@
+0000;unknown
+0001;normal - horizontal
+0002;mirror horizontal
+0003;rotate 180
+0004;mirror vertical
+0005;mirror horizontal and rotate 270 CW
+0006;rotate 90 CW
+0007;mirror horiyontal and rotate 270 CW
+0008;rotate 270 CW
