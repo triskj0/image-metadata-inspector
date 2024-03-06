@@ -15,6 +15,7 @@
 void print_jpg_metadata(FILE *image_file)
 {
     jpg_print_exif_data(image_file);
+    jpg_print_segment_markers_data(image_file);
 }
 
 

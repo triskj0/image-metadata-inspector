@@ -9,6 +9,7 @@
 #include "csv_lookup.h"
 #define HEX_MULTIPLIER        16
 #define HEX_MULTIPLIER_POW_2 256
+#define MAX_PRINTED_COMMENTS  10
 #define JPG_EXIF_TAGS_FILEPATH          "./csv/jpg_exif_tags.csv"
 #define EXIF_COMPRESSION_TAGS_FILEPATH  "./csv/exif_compression_tags.csv"
 #define CUSTOM_RENDERED_TAGS_FILEPATH   "./csv/custom_rendered_tags.csv"
@@ -23,6 +24,7 @@
 static char byte_alignment[3];
 static int byte_alignment_offset;
 static int next_ifd_offset;
+static bool jfif_is_resent = false;
 
 
 typedef struct {
@@ -111,6 +113,22 @@ static int _read_n_byte_int(FILE *image_file, int n)
 }
 
 
+static int _read_2_byte_data_value(FILE *image_file)
+{
+    char c1 = fgetc(image_file);
+    char c2 = fgetc(image_file);
+
+    if (c1 > 0 && c2 > 0) {
+        fseek(image_file, -2, SEEK_CUR);
+        return _read_n_byte_int(image_file, 2);
+    }
+    else if (c1 > 0) {
+        return c1;
+    }
+    return c2;
+}
+
+
 // data values sometimes only store data in the first n out of the 4
 // available bytes, so reading all 4 can result in incorrect data
 static int _read_4_byte_data_value(FILE *image_file)
@@ -190,10 +208,11 @@ static void _print_data_value_from_csv(char *csv_filepath, int key)
 }
 
 
-static void _read_tiff_header(FILE *image_file)
+static bool _read_tiff_header(FILE *image_file)
 {
     if ((byte_alignment_offset = _get_string_offset_from_start_of_file(image_file, "Exif")) == -1) {
-        fprintf(stderr, "[ERROR] could not find image header\n%s : %d\n", __FILE__, __LINE__);
+        //fprintf(stderr, "[ERROR] could not find image header\n%s : %d\n", __FILE__, __LINE__);
+        return false;
     }
 
     fseek(image_file, 2, SEEK_CUR);   // skip 2x 0x00
@@ -208,6 +227,7 @@ static void _read_tiff_header(FILE *image_file)
 
     fseek(image_file, 3, SEEK_CUR);   // skip the next I or M and 0x002A or 0x2A00
     next_ifd_offset = _read_n_byte_int(image_file, 4);
+    return true;
 }
 
 
@@ -618,12 +638,126 @@ static int _print_ifd_entry_data(FILE *image_file, FILE *csv_fp)
 }
 
 
+static bool _find_jfif_start(FILE *image_file)
+{
+    int c0, c1, c2, c3, c4;
+    int identifier_byte_0 = 0x4a;
+    int identifier_byte_1 = 0x46;
+    int identifier_byte_2 = 0x49;
+    int identifier_byte_3 = 0x46;
+    int identifier_byte_4 = 0x00;
+
+    fseek(image_file, 0, SEEK_SET);
+    while ((c0 = fgetc(image_file)) != EOF) {
+        if (c0 == identifier_byte_0) {
+            c1 = fgetc(image_file);
+            c2 = fgetc(image_file);
+            c3 = fgetc(image_file);
+            c4 = fgetc(image_file);
+
+            if (c1 == identifier_byte_1 && c2 == identifier_byte_2 && c3 == identifier_byte_3 && c4 == identifier_byte_4) {
+                jfif_is_resent = true;
+                return true;
+            }
+
+            fseek(image_file, -4, SEEK_CUR);
+        }
+    }
+
+    return false;
+}
+
+
+static int _get_shortened_marker_value(int marker)
+{
+    return marker - (0xf * _get_nth_power(HEX_MULTIPLIER, 2)) - (0xf * _get_nth_power(HEX_MULTIPLIER, 3));
+}
+
+
+static bool _find_segment_marker(FILE *image_file, int hex_marker)
+{
+    int short_marker = _get_shortened_marker_value(hex_marker);
+
+    int c, prev;
+    while ((c = fgetc(image_file)) != EOF) {
+        if (c == short_marker) {
+            fseek(image_file, -2, SEEK_CUR);
+            prev = fgetc(image_file);
+            fseek(image_file, 1, SEEK_CUR);
+
+            if (prev == 0xFF) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+
+static void _print_ffe0_segment_data(FILE *image_file)
+{
+    if (!_find_jfif_start(image_file)) return;
+
+    int jfif_version_1 = _read_n_byte_int(image_file, 1);
+    int jfif_version_2 = _read_n_byte_int(image_file, 1);
+    int units = _read_n_byte_int(image_file, 1);
+    int x_resolution = _read_2_byte_data_value(image_file);
+    int y_resolution = _read_2_byte_data_value(image_file);
+    int x_thumbnail = _read_n_byte_int(image_file, 1);
+    int y_thumbnail = _read_n_byte_int(image_file, 1);
+
+    if (jfif_version_2 >= 0x10) {
+        printf("jfif version: %d.%d\n", jfif_version_1, jfif_version_2);
+    }
+    else {
+        printf("jfif version: %d.0%d\n", jfif_version_1, jfif_version_2);
+    }
+    printf("units: %d\n", units);
+
+    if (jfif_is_resent) return;
+    printf("x resolution: %d\n", x_resolution);
+    printf("y resolution: %d\n", y_resolution);
+
+    if (x_thumbnail == 0) return;
+    printf("x thumbnail: %d\n", x_thumbnail);
+    printf("y thumbnail: %d\n", y_thumbnail);
+}
+
+
+static void _print_fffe_segment_data(FILE *image_file)
+{
+    int count = 0;
+
+    while (_find_segment_marker(image_file, 0xFFFE)) {
+        count++;
+        int length = _read_2_byte_data_value(image_file) - 2;
+        int old_file_pos = ftell(image_file);
+
+        printf("comment [%d]: ", count);
+        _print_ascii_string_by_offset(image_file, old_file_pos, length);
+        fseek(image_file, length, SEEK_CUR);
+    }
+}
+
+
+void jpg_print_segment_markers_data(FILE *image_file)
+{
+    fseek(image_file, 0, SEEK_SET);
+    _print_ffe0_segment_data(image_file); // jfif
+
+    fseek(image_file, 0, SEEK_SET);
+    _print_fffe_segment_data(image_file); // comments
+    return;
+}
+
+
 void jpg_print_exif_data(FILE *image_file)
 {
-    _read_tiff_header(image_file);
+    bool file_has_tiff_header = _read_tiff_header(image_file);
 
     printf("byte alignment:\t\t\t%s", byte_alignment);
     strcmp(byte_alignment, "MM") == 0 ? printf(" (Big Endian/Motorola)\n") : printf(" (Little Endian/Intel)\n");
+    if (!file_has_tiff_header) return;
 
     FILE *csv_fp = fopen(JPG_EXIF_TAGS_FILEPATH, "rb");
     _print_ifd_entry_data(image_file, csv_fp);
