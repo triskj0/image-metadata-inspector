@@ -9,11 +9,16 @@
 #include "csv_lookup.h"
 #define HEX_MULTIPLIER        16
 #define HEX_MULTIPLIER_POW_2 256
-#define JPG_EXIF_TAGS_FILEPATH "./csv/jpg_exif_tags.csv"
-#define EXIF_COMPRESSION_TAGS_FILEPATH "./csv/exif_compression_tags.csv"
-#define CUSTOM_RENDERED_TAGS_FILEPATH "./csv/custom_rendered_tags.csv"
-#define ORIENTATION_TAGS_FILEPATH "./csv/orientation_tags.csv"
-#define SCENE_CAPTURE_TAGS_FILEPATH "./csv/scene_capture_tags.csv"
+#define JPG_EXIF_TAGS_FILEPATH          "./csv/jpg_exif_tags.csv"
+#define EXIF_COMPRESSION_TAGS_FILEPATH  "./csv/exif_compression_tags.csv"
+#define CUSTOM_RENDERED_TAGS_FILEPATH   "./csv/custom_rendered_tags.csv"
+#define ORIENTATION_TAGS_FILEPATH       "./csv/orientation_tags.csv"
+#define SCENE_CAPTURE_TAGS_FILEPATH     "./csv/scene_capture_tags.csv"
+#define RESOLUTION_UNIT_TAGS_FILEPATH   "./csv/resolution_unit_tags.csv"
+#define YCBCR_POSITIONING_TAGS_FILEPATH "./csv/ycbcr_positioning_tags.csv"
+#define EXPOSURE_MODE_TAGS_FILEPATH     "./csv/exposure_mode_tags.csv"
+#define GAIN_CONTROL_TAGS_FILEPATH      "./csv/gain_control_tags.csv"
+#define CONTRAST_TAGS_FILEPATH          "./csv/contrast_tags.csv"
 
 static char byte_alignment[3];
 static int byte_alignment_offset;
@@ -49,11 +54,13 @@ static bool _tag_has_occured(Exif_Tag_Array arr, int tag)
 
 static int _get_nth_power(int number, int power)
 {
-    if (power == 0)
+    if (power == 0) {
         return 1;
+    }
 
-    else if (power == 1)
+    else if (power == 1) {
         return number;
+    }
 
     int original_number = number;
     for (int i = power; i > 1; i--) {
@@ -122,8 +129,9 @@ static int _read_4_byte_data_value(FILE *image_file)
         return _read_n_byte_int(image_file, 4);
     }
 
-    if (val == 0)
+    if (val == 0) {
         return val2;
+    }
 
     return val;
 }
@@ -166,6 +174,19 @@ static int _get_string_offset_from_start_of_file(FILE *image_file, char *str)
     }
 
     return -1;
+}
+
+
+static void _print_data_value_from_csv(char *csv_filepath, int key)
+{
+    FILE *csv_fp = fopen(csv_filepath, "rb");
+    char *result = csv_get_string_by_value(csv_fp, key);
+    fclose(csv_fp);
+
+    if (strcmp(result, "") == 0) return;
+
+    printf("%s\n", result);
+    free(result);
 }
 
 
@@ -312,23 +333,10 @@ static void _print_resolution_unit(FILE *image_file)
         if (c > 3)
             continue;
 
-        fseek(image_file, 3-i, SEEK_CUR);
-
-        switch (c) {
-            case 1:
-                printf("None\n");
-                break;
-
-            case 2:
-                printf("inches\n");
-                break;
-
-            case 3:
-                printf("cm\n");
-                break;
-        }
-        return;
+        break;
     }
+    fseek(image_file, 3-i, SEEK_CUR);
+    _print_data_value_from_csv(RESOLUTION_UNIT_TAGS_FILEPATH, c);
 }
 
 
@@ -341,27 +349,16 @@ static void _print_ycbcr_positioning(FILE *image_file)
 
         if (c != 1 && c != 2)
             continue;
-
-        fseek(image_file, 3-i, SEEK_CUR);
-
-        switch (c) {
-            case 1:
-                printf("centered\n");
-                return;
-
-            case 2:
-                printf("co-sited\n");
-                return;
-        }
+        break;
     }
+    fseek(image_file, 3-i, SEEK_CUR);
+    _print_data_value_from_csv(YCBCR_POSITIONING_TAGS_FILEPATH, c); 
 }
 
 
 static void _print_custom_rendered(FILE *image_file)
 {
     int c, i;
-    FILE *csv_fp = fopen(CUSTOM_RENDERED_TAGS_FILEPATH, "rb");
-
 
     for (i = 0; i < 4; i++) {
         c = _read_n_byte_int(image_file, 1);
@@ -373,12 +370,7 @@ static void _print_custom_rendered(FILE *image_file)
     }
 
     fseek(image_file, 3-i, SEEK_CUR);
-    char *result = csv_get_string_by_value(csv_fp, c);
-    if (strcmp(result, "") == 0) return;
-
-    printf("%s\n", result);
-    fclose(csv_fp);
-    free(result);
+    _print_data_value_from_csv(CUSTOM_RENDERED_TAGS_FILEPATH, c);
 }
 
 
@@ -389,21 +381,13 @@ static void _print_exposure_mode(FILE *image_file)
     for (i = 0; i < 4; i++) {
         c = _read_n_byte_int(image_file, 1);
 
-        fseek(image_file, 3-i, SEEK_CUR);
-        switch (c) {
-            case 0:
-                printf("auto\n");
-                return;
-
-            case 1:
-                printf("manual\n");
-                return;
-
-            case 2:
-                printf("auto bracket\n");
-                return;
+        if (c == 0 || c == 1 || c == 2) {
+            break;
         }
     }
+
+    fseek(image_file, 3-i, SEEK_CUR);
+    _print_data_value_from_csv(EXPOSURE_MODE_TAGS_FILEPATH, c);
 }
 
 
@@ -422,8 +406,9 @@ static void _print_focal_length_in_35_mm(FILE *image_file)
     for (i = 0; i < 4; i++) {
         c = _read_n_byte_int(image_file, 1);
 
-        if (c == 0)
+        if (c == 0) {
             continue;
+        }
 
         fseek(image_file, 3-i, SEEK_CUR);
         printf("%dmm\n", c);
@@ -439,21 +424,15 @@ static void _print_scene_capture_type(FILE *image_file)
     for (i = 0; i < 4; i++) {
         c = _read_n_byte_int(image_file, 1);
 
-        if (c > 4)
+        if (c > 4) {
             continue;
+        }
 
         break;
     }
     
     fseek(image_file, 3-i, SEEK_CUR);
-    FILE *csv_fp = fopen(SCENE_CAPTURE_TAGS_FILEPATH, "rb");
-    
-    char *result = csv_get_string_by_value(csv_fp, c);
-    if (strcmp(result, "") == 0) return;
-
-    printf("%s\n", result);
-    free(result);
-    fclose(csv_fp);
+    _print_data_value_from_csv(SCENE_CAPTURE_TAGS_FILEPATH, c);
 }
 
 
@@ -464,32 +443,14 @@ static void _print_gain_control(FILE *image_file)
     for (i = 0; i < 4; i++) {
         c = _read_n_byte_int(image_file, 1);
 
-        if (c > 4)
+        if (c > 4) {
             continue;
-
-        fseek(image_file, 3-i, SEEK_CUR);
-        switch (c) {
-            case 0:
-                printf("None\n");
-                return;
-
-            case 1:
-                printf("low gain up\n");
-                return;
-
-            case 2:
-                printf("high gain up\n");
-                return;
-
-            case 3:
-                printf("low gain down\n");
-                return;
-
-            case 4:
-                printf("high gain down\n");
-                return;
         }
+        break;
     }
+
+    fseek(image_file, 3-i, SEEK_CUR);
+    _print_data_value_from_csv(GAIN_CONTROL_TAGS_FILEPATH, c);
 }
 
 
@@ -500,24 +461,14 @@ static void _print_contrast(FILE *image_file)
     for (i = 0; i < 4; i++) {
         c = _read_n_byte_int(image_file, 1);
 
-        if (c > 2)
+        if (c > 2) {
             continue;
-
-        fseek(image_file, 3-i, SEEK_CUR);
-        switch (c) {
-            case 0:
-                printf("normal\n");
-                return;
-
-            case 1:
-                printf("low\n");
-                return;
-
-            case 2:
-                printf("high\n");
-                return;
         }
+        break;
     }
+
+    fseek(image_file, 3-i, SEEK_CUR);
+    _print_data_value_from_csv(CONTRAST_TAGS_FILEPATH, c);
 }
 
 
@@ -539,32 +490,20 @@ static void _print_sharpness(FILE *image_file)
 static void _print_orientation(FILE *image_file)
 {
     int value = _read_n_byte_int(image_file, 4);
-    FILE *csv_fp = fopen(ORIENTATION_TAGS_FILEPATH, "rb");
-
-    char *result = csv_get_string_by_value(csv_fp, value);
-    if (strcmp(result, "") == 0) return;
-
-    printf("%s\n", result);
-    free(result);
-    fclose(csv_fp);
+    _print_data_value_from_csv(ORIENTATION_TAGS_FILEPATH, value);
 }
 
 
 static void _print_compression(FILE *image_file)
 {
-
-    FILE *csv_fp = fopen(EXIF_COMPRESSION_TAGS_FILEPATH, "rb");
     int key = _read_4_byte_data_value(image_file);
-    char *result_str = csv_get_string_by_value(csv_fp, key);
-    fclose(csv_fp);
-
-    printf("%s\n", result_str);
+    _print_data_value_from_csv(EXIF_COMPRESSION_TAGS_FILEPATH, key);
 }
 
 
 static bool _detect_tags_with_their_own_functions(FILE *image_file, int tag_number)
 {
-    if (tag_number == 0x0128)
+    if (tag_number == 0x0128) 
         _print_resolution_unit(image_file);
 
     else if (tag_number == 0x0213)
