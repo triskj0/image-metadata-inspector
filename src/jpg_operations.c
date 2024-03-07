@@ -553,7 +553,7 @@ static bool _detect_tags_with_their_own_functions(FILE *image_file, int tag_numb
     else if (tag_number == 0xa409)
         _print_saturation(image_file);
 
-    else if (tag_number == 0xa40a)
+    else if (tag_number == 0xa40a) 
         _print_sharpness(image_file);
 
     else if (tag_number == 0x0112)
@@ -588,9 +588,8 @@ static int _print_ifd_entry_data(FILE *image_file, FILE *csv_fp)
         }
 
         char *tag_string = csv_get_string_by_value(csv_fp, tag_number);
-
         if (strcmp(tag_string, "") == 0) {
-            free(tag_string);
+            fseek(image_file, 4, SEEK_CUR);
             continue;
         }
 
@@ -598,8 +597,9 @@ static int _print_ifd_entry_data(FILE *image_file, FILE *csv_fp)
         _indent_result(strlen(tag_string));
         free(tag_string);
 
-        if (_detect_tags_with_their_own_functions(image_file, tag_number))
+        if (_detect_tags_with_their_own_functions(image_file, tag_number)) {
             continue;
+        }
 
         if ((total_components_length = _get_total_components_length(data_format, n_components)) > 4) {
             data_offset = _read_n_byte_int(image_file, 4);
@@ -740,6 +740,15 @@ static void _print_fffe_segment_data(FILE *image_file)
 }
 
 
+static void _print_presence_of_other_segments(FILE *image_file)
+{
+    int segment_markers[] = { 0xFFD8,   // quantisation table,
+                              0xFFC0,   // start of baseline DCT frame
+                              0xFFC4,   // huffman table
+                              0xFFDA }; // start of scan
+}
+
+
 void jpg_print_segment_markers_data(FILE *image_file)
 {
     fseek(image_file, 0, SEEK_SET);
@@ -747,7 +756,9 @@ void jpg_print_segment_markers_data(FILE *image_file)
 
     fseek(image_file, 0, SEEK_SET);
     _print_fffe_segment_data(image_file); // comments
-    return;
+
+    fseek(image_file, 0, SEEK_SET);
+    _print_presence_of_other_segments(image_file); // other
 }
 
 

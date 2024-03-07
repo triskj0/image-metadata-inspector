@@ -100,8 +100,8 @@ static char *_read_value(FILE *csv_fp)
     for (i = 0; (c = fgetc(csv_fp)) != '\n' && c != EOF; i++) {
         value[i] = c;
     }
-    value[i+1] = 0;
 
+    value[i+1] = 0;
     return value;
 }
 
@@ -113,7 +113,7 @@ char *csv_get_string_by_value(FILE *csv_fp, int key)
     int i;
     int csv_number_of_lines = csv_count_lines(csv_fp);
 
-    for (i = 0; i < csv_number_of_lines; i++) {
+    for (i = 0; i < csv_number_of_lines - 1; i++) {
         int key_from_file = _read_key(csv_fp);
 
         if (key_from_file == key) {
@@ -123,7 +123,7 @@ char *csv_get_string_by_value(FILE *csv_fp, int key)
         _goto_next_line(csv_fp);
     }
 
-    if (i == csv_number_of_lines) {
+    if (i == csv_number_of_lines - 1) {
         return "";
     }
 
