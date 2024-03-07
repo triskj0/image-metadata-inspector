@@ -307,7 +307,7 @@ static void _indent_result(size_t keyword_length)
     keyword_length++; // count in a colon
 
     if (keyword_length < 5)
-        printf("\t\t\t\t\t");
+        printf("\t\t\t\t");
 
     else if (keyword_length < 8)
         printf("\t\t\t\t");
@@ -742,10 +742,39 @@ static void _print_fffe_segment_data(FILE *image_file)
 
 static void _print_presence_of_other_segments(FILE *image_file)
 {
+    bool subtitle_printed = false;
+    int current;
+
     int segment_markers[] = { 0xFFD8,   // quantisation table,
                               0xFFC0,   // start of baseline DCT frame
                               0xFFC4,   // huffman table
                               0xFFDA }; // start of scan
+
+    int number_of_markers = sizeof(segment_markers) / sizeof(int);
+
+    for (int i = 0; i < number_of_markers; i++) {
+        current = segment_markers[i];
+
+        if (_find_segment_marker(image_file, current)) {
+            if (!subtitle_printed) {
+                printf("other present segments include:\n");
+                subtitle_printed = true;
+            }
+
+            if (current == segment_markers[0]) {
+                printf(" - quantisation table (%d)\n", segment_markers[0]);
+            }
+            else if (current == segment_markers[1]) {
+                printf(" - start of baseline DCT frame (%d)\n", segment_markers[0]);
+            }
+            else if (current == segment_markers[2]) {
+                printf(" - huffman table (%d)\n", segment_markers[2]);
+            }
+            else if (current == segment_markers[3]) {
+                printf(" - start of scan (%d)\n", segment_markers[3]);
+            }
+        }
+    }
 }
 
 
