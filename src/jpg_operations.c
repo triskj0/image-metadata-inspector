@@ -707,20 +707,20 @@ static void _print_ffe0_segment_data(FILE *image_file)
     int y_thumbnail = _read_n_byte_int(image_file, 1);
 
     if (jfif_version_2 >= 0x10) {
-        printf("jfif version: %d.%d\n", jfif_version_1, jfif_version_2);
+        printf("jfif version:\t\t\t%d.%d\n", jfif_version_1, jfif_version_2);
     }
     else {
-        printf("jfif version: %d.0%d\n", jfif_version_1, jfif_version_2);
+        printf("jfif version:\t\t\t%d.0%d\n", jfif_version_1, jfif_version_2);
     }
-    printf("units: %d\n", units);
+    printf("units:\t\t\t\t%d\n", units);
 
     if (jfif_is_resent) return;
-    printf("x resolution: %d\n", x_resolution);
-    printf("y resolution: %d\n", y_resolution);
+    printf("x resolution:\t\t\t%d\n", x_resolution);
+    printf("y resolution:\t\t\t%d\n", y_resolution);
 
     if (x_thumbnail == 0) return;
-    printf("x thumbnail: %d\n", x_thumbnail);
-    printf("y thumbnail: %d\n", y_thumbnail);
+    printf("x thumbnail:\t\t\t%d\n", x_thumbnail);
+    printf("y thumbnail:\t\t\t%d\n", y_thumbnail);
 }
 
 
