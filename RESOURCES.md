@@ -7,6 +7,20 @@
 
 [accusoft.com](https://help.accusoft.com/ImageGear/v18.2/Windows/ActiveX/IGAX-10-56.html) <br> 
 
-[ftp-osl.osuosl.org](https://ftp-osl.osuosl.org/pub/libpng/documents/pngext-1.5.0.html)
+[ftp-osl.osuosl.org](https://ftp-osl.osuosl.org/pub/libpng/documents/pngext-1.5.0.html) <br>
 
+
+### resources for jpg metadata and jpg markers
+
+[exiv2.org](exiv2.org/tags.html) <br>
+
+[media.mit.edu](www.media.mit.edu/pia/Research/deepview/exif.html) <br>
+
+[exiftool.org](exiftool.org/TagNames/EXIF.html) <br>
+
+[w3.org](w3.org/Graphics/JPEG/jfif3.pdf) <br>
+
+[disktuna.com](disktuna.com/list-of-jpeg-markers/) <br>
+
+[videotechnology.com](videotechnology.com/jpeg/j1.html) <br>
 
