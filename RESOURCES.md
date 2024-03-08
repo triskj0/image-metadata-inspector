@@ -12,15 +12,15 @@
 
 ### resources for jpg metadata and jpg markers
 
-[exiv2.org](exiv2.org/tags.html) <br>
+[exiv2.org](https://www.exiv2.org/tags.html) <br>
 
-[media.mit.edu](www.media.mit.edu/pia/Research/deepview/exif.html) <br>
+[media.mit.edu](https://www.media.mit.edu/pia/Research/deepview/exif.html) <br>
 
-[exiftool.org](exiftool.org/TagNames/EXIF.html) <br>
+[exiftool.org](https://www.exiftool.org/TagNames/EXIF.html) <br>
 
-[w3.org](w3.org/Graphics/JPEG/jfif3.pdf) <br>
+[w3.org](https://www.w3.org/Graphics/JPEG/jfif3.pdf) <br>
 
-[disktuna.com](disktuna.com/list-of-jpeg-markers/) <br>
+[disktuna.com](https://www.disktuna.com/list-of-jpeg-markers/) <br>
 
-[videotechnology.com](videotechnology.com/jpeg/j1.html) <br>
+[videotechnology.com](https://www.videotechnology.com/jpeg/j1.html) <br>
 
