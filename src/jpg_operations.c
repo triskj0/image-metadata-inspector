@@ -24,7 +24,7 @@
 static char byte_alignment[3];
 static int byte_alignment_offset;
 static int next_ifd_offset;
-static bool jfif_is_resent = false;
+static bool jfif_is_present = false;
 
 
 typedef struct {
@@ -201,7 +201,10 @@ static void _print_data_value_from_csv(char *csv_filepath, int key)
     char *result = csv_get_string_by_value(csv_fp, key);
     fclose(csv_fp);
 
-    if (strcmp(result, "") == 0) return;
+    if (strcmp(result, "") == 0) {
+        putchar('\n');
+        return;
+    };
 
     printf("%s\n", result);
     free(result);
@@ -656,7 +659,7 @@ static bool _find_jfif_start(FILE *image_file)
             c4 = fgetc(image_file);
 
             if (c1 == identifier_byte_1 && c2 == identifier_byte_2 && c3 == identifier_byte_3 && c4 == identifier_byte_4) {
-                jfif_is_resent = true;
+                jfif_is_present = true;
                 return true;
             }
 
@@ -700,7 +703,8 @@ static void _print_ffe0_segment_data(FILE *image_file)
 
     int jfif_version_1 = _read_n_byte_int(image_file, 1);
     int jfif_version_2 = _read_n_byte_int(image_file, 1);
-    int units = _read_n_byte_int(image_file, 1);
+    // after adding one to `units` we can reuse `resolution_unit_tags.csv`
+    int units = _read_n_byte_int(image_file, 1) + 1;
     int x_resolution = _read_2_byte_data_value(image_file);
     int y_resolution = _read_2_byte_data_value(image_file);
     int x_thumbnail = _read_n_byte_int(image_file, 1);
@@ -712,11 +716,13 @@ static void _print_ffe0_segment_data(FILE *image_file)
     else {
         printf("jfif version:\t\t\t%d.0%d\n", jfif_version_1, jfif_version_2);
     }
-    printf("units:\t\t\t\t%d\n", units);
 
-    if (jfif_is_resent) return;
+    if (jfif_is_present) return;
     printf("x resolution:\t\t\t%d\n", x_resolution);
     printf("y resolution:\t\t\t%d\n", y_resolution);
+
+    printf("units:\t\t\t\t");
+    _print_data_value_from_csv(RESOLUTION_UNIT_TAGS_FILEPATH, units);
 
     if (x_thumbnail == 0) return;
     printf("x thumbnail:\t\t\t%d\n", x_thumbnail);
@@ -762,16 +768,16 @@ static void _print_presence_of_other_segments(FILE *image_file)
             }
 
             if (current == segment_markers[0]) {
-                printf(" - quantisation table (%d)\n", segment_markers[0]);
+                printf(" - quantisation table (0x%X)\n", segment_markers[0]);
             }
             else if (current == segment_markers[1]) {
-                printf(" - start of baseline DCT frame (%d)\n", segment_markers[0]);
+                printf(" - start of baseline DCT frame (0x%X)\n", segment_markers[0]);
             }
             else if (current == segment_markers[2]) {
-                printf(" - huffman table (%d)\n", segment_markers[2]);
+                printf(" - huffman table (0x%X)\n", segment_markers[2]);
             }
             else if (current == segment_markers[3]) {
-                printf(" - start of scan (%d)\n", segment_markers[3]);
+                printf(" - start of scan (0x%X)\n", segment_markers[3]);
             }
         }
     }
