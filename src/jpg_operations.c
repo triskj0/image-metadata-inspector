@@ -202,7 +202,7 @@ static void _print_data_value_from_csv(char *csv_filepath, int key)
     fclose(csv_fp);
 
     if (strcmp(result, "") == 0) {
-        putchar('\n');
+        printf("unrecognized value\n");
         return;
     };
 
@@ -763,7 +763,7 @@ static void _print_presence_of_other_segments(FILE *image_file)
 
         if (_find_segment_marker(image_file, current)) {
             if (!subtitle_printed) {
-                printf("other present segments include:\n");
+                printf("\nother present segments include:\n");
                 subtitle_printed = true;
             }
 
