@@ -771,7 +771,7 @@ static void _print_presence_of_other_segments(FILE *image_file)
                 printf(" - quantisation table (0x%X)\n", segment_markers[0]);
             }
             else if (current == segment_markers[1]) {
-                printf(" - start of baseline DCT frame (0x%X)\n", segment_markers[0]);
+                printf(" - start of baseline DCT frame (0x%X)\n", segment_markers[1]);
             }
             else if (current == segment_markers[2]) {
                 printf(" - huffman table (0x%X)\n", segment_markers[2]);

@@ -19,7 +19,7 @@
 0115;samples per pixel
 0116;rows per strip
 0117;strip byte counts
-011a;x Resolution
+011a;x resolution
 011b;y resolution
 011c;planar configuration
 011d;page name
