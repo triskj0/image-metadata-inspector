@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include "test.h"
-#include "../src/file_operations.h"
+#include "../src/png_operations.h"
 
 #define RESULTS_FILE_NAME "results.txt"
 #define IHDR_PATH "../src/examples/png/exif-itxt.png"
@@ -173,7 +173,7 @@ void ihdr_test(int *passed_count, int *failed_count) {
 
 	// START testing inside the file
 	FILE *image_fp = fopen(IHDR_PATH, "rb");
-	color_type = get_print_IHDR_chunk_data(image_fp);
+	color_type = png_get_print_IHDR_chunk_data(image_fp);
 	fclose(image_fp);
 
 	// reset output
@@ -233,43 +233,43 @@ int main(void) {
 	// tests
 	ihdr_test(&passed_count, &failed_count);
 
-	test_fn(print_iTXt_chunk_data, 300, EXIF_ITXT_PATH, ITXT_CORRECT_RESULT,\
+	test_fn(png_print_iTXt_chunk_data, 300, EXIF_ITXT_PATH, ITXT_CORRECT_RESULT,\
 			ITXT_MESSAGE, &passed_count, &failed_count);
 
-	test_fn(print_tEXt_chunk_data, 150, TEXT_PATH, TEXT_CORRECT_RESULT,\
+	test_fn(png_print_tEXt_chunk_data, 150, TEXT_PATH, TEXT_CORRECT_RESULT,\
 			TEXT_MESSAGE, &passed_count, &failed_count);
 
-	test_fn(print_PLTE_chunk_data, 150, PLTE_PATH, PLTE_CORRECT_RESULT,\
+	test_fn(png_print_PLTE_chunk_data, 150, PLTE_PATH, PLTE_CORRECT_RESULT,\
 			PLTE_MESSAGE, &passed_count, &failed_count);
 
-	test_fn(print_bKGD_chunk_data, 150, BKGD_PATH, BKGD_CORRECT_RESULT,\
+	test_fn(png_print_bKGD_chunk_data, 150, BKGD_PATH, BKGD_CORRECT_RESULT,\
 			BKGD_MESSAGE, &passed_count, &failed_count);
 
-	test_fn(print_cHRM_chunk_data, 250, CHRM_PATH, CHRM_CORRECT_RESULT,\
+	test_fn(png_print_cHRM_chunk_data, 250, CHRM_PATH, CHRM_CORRECT_RESULT,\
 			CHRM_MESSAGE, &passed_count, &failed_count);
 
-	test_fn(print_sBIT_chunk_data, 250, SBIT_PATH, SBIT_CORRECT_RESULT,\
+	test_fn(png_print_sBIT_chunk_data, 250, SBIT_PATH, SBIT_CORRECT_RESULT,\
 			SBIT_MESSAGE, &passed_count, &failed_count);
 
-	test_fn(print_tRNS_chunk_data, 200, TRNS_PATH, TRNS_CORRECT_RESULT,\
+	test_fn(png_print_tRNS_chunk_data, 200, TRNS_PATH, TRNS_CORRECT_RESULT,\
 			TRNS_MESSAGE, &passed_count, &failed_count);
 
-	test_fn(print_sRGB_chunk_data, 200, SRGB_PATH, SRGB_CORRECT_RESULT,\
+	test_fn(png_print_sRGB_chunk_data, 200, SRGB_PATH, SRGB_CORRECT_RESULT,\
 			SRGB_MESSAGE, &passed_count, &failed_count);
 
-	test_fn(print_eXIf_chunk_data, 350, EXIF_PATH, EXIF_CORRECT_RESULT,\
+	test_fn(png_print_eXIf_chunk_data, 350, EXIF_PATH, EXIF_CORRECT_RESULT,\
 			EXIF_MESSAGE, &passed_count, &failed_count);
 
-	test_fn(search_for_common_private_chunks, 350, CPC_PATH, CPC_CORRECT_RESULT,\
+	test_fn(png_search_for_common_private_chunks, 350, CPC_PATH, CPC_CORRECT_RESULT,\
 			CPC_MESSAGE, &passed_count, &failed_count);
 
-	test_fn(print_gAMA_chunk_data, 150, GAMA_PATH, GAMA_CORRECT_RESULT,\
+	test_fn(png_print_gAMA_chunk_data, 150, GAMA_PATH, GAMA_CORRECT_RESULT,\
 			GAMA_MESSAGE, &passed_count, &failed_count);
 
-	test_fn(print_pHYs_chunk_data, 200, PHYS_PATH, PHYS_CORRECT_RESULT,\
+	test_fn(png_print_pHYs_chunk_data, 200, PHYS_PATH, PHYS_CORRECT_RESULT,\
 			PHYS_MESSAGE, &passed_count, &failed_count);
 
-	test_fn(print_tIME_chunk_data, 200, TIME_PATH, TIME_CORRECT_RESULT,\
+	test_fn(png_print_tIME_chunk_data, 200, TIME_PATH, TIME_CORRECT_RESULT,\
 			TIME_MESSAGE, &passed_count, &failed_count);
 
 	print_results(passed_count, failed_count);
