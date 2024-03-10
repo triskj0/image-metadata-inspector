@@ -94,7 +94,7 @@ static char *_read_value(FILE *csv_fp)
 {
     char c;
     int i;
-    char *value = malloc(50 * sizeof(char));
+    char *value = calloc(50, sizeof(char));
 
     fseek(csv_fp, 1, SEEK_CUR); // skip ':'
     for (i = 0; (c = fgetc(csv_fp)) != '\n' && c != EOF; i++) {
