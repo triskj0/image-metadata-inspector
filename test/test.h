@@ -12,7 +12,7 @@
 
 
 void print_results(int, int);
-void find_difference(char *, char *);
+void find_difference(char *, char *, int);
 int STR_TEST(char *, char *, char *);
 
 
@@ -23,12 +23,11 @@ void print_results(int passed, int failed) {
 }
 
 
-void find_difference(char *str1, char *str2) {
-	int max_iter = strlen(str1) + 10;
+void find_difference(char *str1, char *str2, int max_iteration) {
 	char *c1 = str1;
 	char *c2 = str2;
 
-	for (int i = 0; i < max_iter; i++, c1++, c2++) {
+	for (int i = 0; i < max_iteration; i++, c1++, c2++) {
 		printf("\n%c : %c", *c1, *c2);
 		if (*c1 != *c2) {
 			printf("\n\nHERE\nbuffer: .%d.\ncorrect: .%d.", *c1, *c2);

@@ -1,0 +1,399 @@
+000b;processing software
+00fe;new subfile type
+00ff;subfile type
+0100;image width
+0101;image length
+0102;bits per sample
+0103;compression
+0106;photometric interpretation
+0107;thresholding
+0108;cell width
+0109;cell length
+010a;fill order
+010d;document name
+010e;image description
+010f;make
+0110;model
+0111;strip offsets
+0112;orientation
+0115;samples per pixel
+0116;rows per strip
+0117;strip byte counts
+011a;x resolution
+011b;y resolution
+011c;planar configuration
+011d;page name
+011e;x position
+011f;y position
+0122;gray response unit
+0123;gray response curve
+0124;T4 options
+0125;T6 options
+0128;resolution unit
+0129;page number
+012d;transfer function
+0131;software
+0132;dateTime
+013b;artist
+013c;host computer
+013d;predictor
+013e;white point
+013f;primary chromaticities
+0140;color map
+0141;halftone hints
+0142;tile width
+0143;tile length
+0144;tile offsets
+0145;tile byte counts
+014a;subIFDs
+014c;ink set
+014d;ink names
+014e;number of inks
+0150;dot range
+0151;target printer
+0152;extra samples
+0153;sample format
+0154;smin sample value
+0155;smax sample value
+0156;transfer range
+0157;clip path
+0158;x clip path units
+0159;y clip path units
+015a;indexed
+015b;JPEG tables
+015f;OPI proxy
+0200;JPEG proc
+0201;JPEG interchange format
+0202;JPEG interchange format length
+0203;JPEG restart interval
+0205;JPEG lossless predictors
+0206;JPEG point transforms
+0207;JPEG Q tables
+0208;JPEG DC tables
+0209;JPEG AC tables
+0211;YCbCr coefficients
+0212;YCbCr subsampling
+0213;YCbCr positioning
+0214;reference blackwhite
+02bc;XML packet
+4746;rating
+4749;rating percent
+7032;vignetting correction params
+7035;chromatic aberration corr. params
+7037;distortion corr. params
+800d;image ID
+828d;CFA repeat pattern dim
+828e;CFA pattern
+828f;battery level
+8298;copyright
+829a;exposure time
+829d;fnumber
+83bb;IPTCNAA
+8649;image resources
+8769;exif tag
+8773;InterColor profile
+8822;exposure program
+8824;spectral sensitivity
+8825;GPS tag
+8827;ISO speed ratings
+8828;OECF
+8829;interlace
+882a;timezone offset
+882b;self-timer mode
+9003;date-time original
+9102;compressed bits per pixel
+9201;shutter speed value
+9202;aperture value
+9203;brightness value
+9204;exposure bias value
+9205;max aperture value
+9206;subject distance
+9207;metering mode
+9208;light source
+9209;flash
+920a;focal length
+920b;flash energy
+920c;spatial frequency response
+920d;noise
+920e;focal plane xresolution
+920f;focal plane yresolution
+9210;focal plane resolution unit
+9211;image number
+9212;security classification
+9213;image history
+9214;subject location
+9215;exposure index
+9216;TIFFEP standard ID
+9217;sensing method
+9c9b;XP title
+9c9c;XP comment
+9c9d;XP author
+9c9e;XP keywords
+9c9f;XP subject
+c612;DNG version
+c613;DNG backward version
+c614;unique camera model
+c615;localized camera model
+c616;CFA plane color
+c617;CFA layout
+c618;linearization table
+c619;black level repeat dim
+c61a;black level
+c61b;black level delta-h
+c61c;black level delta-v
+c61d;white level
+c61e;default scale
+c61f;default crop origin
+c620;default crop size
+c621;color matrix 1
+c622;color matrix 2
+c623;camera calibration 1
+c624;camera calibration 2
+c625;reduction matrix 1
+c626;reduction matrix 2
+c627;analog balance
+c628;as shot neutral
+c629;as shot white XY
+c62a;baseline exposure
+c62b;baseline noise
+c62c;baseline sharpness
+c62d;bayer green split
+c62e;linear response limit
+c62f;camera serial number
+c630;lens info
+c631;chroma blur radius
+c632;antialias strength
+c633;shadow scale
+c634;DNG private data
+c635;maker note safety
+c65a;calibration illuminant 1
+c65b;calibration illuminant 2
+c65c;best quality scale
+c65d;raw data unique ID
+c68b;original raw file name
+c68c;original raw file data
+c68d;active area
+c68e;masked areas
+c68f;as shot ICC profile
+c690;as shot pre-profile matrix
+c691;current ICC profile
+c692;current pre-profile matrix
+c6bf;colorimetric reference
+c6f3;camera calibration signature
+c6f4;profile calibration signature
+c6f5;extra camera profiles
+c6f6;as shot profile name
+c6f7;noise reduction applied
+c6f8;profile name
+c6f9;profile huesatmapdims
+c6fa;profile huesatmap data 1
+c6fb;profile huesatmap data 2
+c6fc;profile tone curve
+c6fd;profile embed policy
+c6fe;profile copyright
+c714;forward matrix 1
+c715;forward matrix 2
+c716;preview application name
+c717;preview application version
+c718;preview settings name
+c719;preview settings digest
+c71a;preview color space
+c71b;preview datetime
+c71c;raw image digest
+c71d;original raw file digest
+c71e;sub tile block size
+c71f;row interleave factor
+c725;profile look table dims
+c726;profile look table data
+c740;opcode list 1
+c741;opcode list 2
+c74e;opcode list 3
+c761;noise profile
+c763;time codes
+c764;frame rate
+c772;t-stop
+c789;reel name
+c7a1;camera label
+c791;original default final size
+c792;original best quality final size
+c793;original default crop size
+c7a3;profile hue satmap encoding
+c7a4;profile looktable encoding
+c7a5;baseline exposure offset
+c7a6;default black render
+c7a7;new raw image digest
+c7a8;raw to preview gain
+c7b5;default user crop
+c7e9;depth format
+c7ea;depth near
+c7eb;depth far
+c7ec;depth units
+c7ed;depth measure type
+c7ee;enhance params
+cd2d;profile gain table map
+cd2e;semantic name
+cd30;semantic instance ID
+cd31;calibration illuminant 3
+cd32;camera calibration 3
+cd33;color matrix 3
+cd34;forward matrix 3
+cd35;illuminant data 1
+cd36;illuminant data 2
+cd37;illuminant data 3
+cd38;mask sub-area
+cd39;profile huesatmap data 3
+cd3a;reduction matrix 3
+cd3b;RGB tables
+cd40;profile gain table map 2
+cd43;column interleave factor
+cd44;image sequence info
+cd46;image stats
+cd47;profile dynamic range
+cd48;profile group name
+cd49;JXL distance
+cd4a;JXL effort
+cd4b;JXL decodeSpeed
+829a;exposure time
+829d;f-number
+8822;exposure program
+8824;spectral sensitivity
+8827;ISO speed ratings
+8828;OECF
+8830;sensitivity type
+8831;standard output sensitivity
+8832;recommended exposure index
+8833;ISO speed
+8834;ISO speed latitude yyy
+8835;ISO speed latitude zzz
+9000;exif version
+9003;date time original
+9004;date time digitized
+9010;offset time
+9011;offset time original
+9012;offset time digitized
+9101;components configuration
+9102;compressed bits per pixel
+9201;shutter speed value
+9202;aperture value
+9203;brightness value
+9204;exposure bias value
+9205;max aperture value
+9206;subject distance
+9207;metering mode
+9208;light source
+9209;flash
+920a;focal length
+9214;subject area
+927c;maker note
+9286;user comment
+9290;sub sec time
+9291;sub sec time original
+9292;sub sec time digitized
+9400;temperature
+9401;humidity
+9402;pressure
+9403;water depth
+9404;acceleration
+9405;camera elevation angle
+a000;flashpix version
+a001;color space
+a002;pixel X dimension
+a003;pixel Y dimension
+a004;relatedSound file
+a005;interoperability tag
+a20b;flash energy
+a20c;spatial frequency response
+a20e;focal plane X resolution
+a20f;focal plane Y resolution
+a210;focal plane resolution unit
+a214;subject location
+a215;exposure index
+a217;sensing method
+a300;file source
+a301;scene type
+a302;CFA pattern
+a401;custom rendered
+a402;exposure mode
+a403;white balance
+a404;digital zoom ratio
+a405;focal length in 35mm film
+a406;scene capture type
+a407;gain control
+a408;contrast
+a409;saturation
+a40a;sharpness
+a40b;device setting description
+a40c;subject distance range
+a420;image unique ID
+a430;camera owner name
+a431;body serial number
+a432;lens specification
+a433;lens make
+a434;lens model
+a435;lens serial number
+a436;image title
+a437;photographer
+a438;image editor
+a439;camera firmware
+a43a;RAW developing software
+a43b;image editing software
+a43c;metadata editing software
+a460;composite image
+a461;source image number of composite image
+a462;source exposure times of composite image
+a500;gamma
+0001;interoperability index
+0002;interoperability version
+1000;related image file format
+1001;related image width
+1002;related image length
+0000;GPS version ID
+0001;GPS latitude ref
+0002;GPS latitude
+0003;GPS longitude ref
+0004;GPS longitude
+0005;GPS altitude ref
+0006;GPS altitude
+0007;GPS timestamp
+0008;GPS satellites
+0009;GPS status
+000a;GPS measure mode
+000b;GPS DOP
+000c;GPS speed ref
+000d;GPS speed
+000e;GPS track ref
+000f;GPS track
+0010;GPS img direction ref
+0011;GPS img direction
+0012;GPS map datum
+0013;GPS dest latitude ref
+0014;GPS dest latitude
+0015;GPS dest longitude ref
+0016;GPS dest longitude
+0017;GPS dest bearing ref
+0018;GPS dest bearing
+0019;GPS dest distance ref
+001a;GPS dest distance
+001b;GPS processing method
+001c;GPS area information
+001d;GPS date stamp
+001e;GPS differential
+001f;GPS h-positioning error
+b000;mPF version
+b001;mPF number of images
+b002;mPF image list
+b003;mPF image UID list
+b004;mPF total frames
+b101;mPF individual num
+b201;mPF pan orientation
+b202;mPF pan overlap h
+b203;mPF pan overlap v
+b204;mPF base viewpoint num
+b205;mPF convergence angle
+b206;mPF baseline length
+b207;mPF vertical divergence
+b208;mPF axis distance X
+b209;mPF axis distance Y
+b20a;mPF axis distance Z
+b20b;mPF yaw angle
+b20c;mPF pitch angle
