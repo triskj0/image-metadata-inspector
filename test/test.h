@@ -3,10 +3,10 @@
     do {                                        \
         if (got == expected) {                  \
             printf("\n[PASSED] %s", fn_name);   \
-			return 1;                \
+            return 1;                           \
         }                                       \
         printf("\n[FAILED] %s", fn_name);       \
-		return 0;                        \
+        return 0;                               \
                                                 \
     } while (0);
 

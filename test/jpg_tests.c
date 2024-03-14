@@ -7,17 +7,25 @@
 #include "../src/jpg_operations.h"
 
 #define RESULTS_FILE_NAME "results.txt"
-#define IFD_MESSAGE "IFD data - 1m.jpg"
-#define IFD_PATH "../src/examples/jpg/1m.jpg"
-#define IFD_CORRECT_RESULT "byte alignment:\t\t\tMM (Big Endian/Motorola)\n"\
+#define IFD_MESSAGE_1M "IFD data - 1m.jpg"
+#define IFD_PATH_1M "../src/examples/jpg/1m.jpg"
+#define IFD_CORRECT_RESULT_1M "byte alignment:\t\t\tMM (Big Endian/Motorola)\n"\
     "image width: \t\t\t4000\nimage length: \t\t\t3000\nbits per sample: \t\t8, 8, 8\nmake: \t\t\t\tHUAWEI\0\n"\
     "model: \t\t\t\tMAR-LX1B\0\norientation: \t\t\tunknown\nx resolution: \t\t\t72/1\ny resolution: \t\t\t72/1\n"\
     "resolution unit: \t\tinches\nsoftware: \t\t\tMAR-L21B 10.0.0.563(C431E7R4P1)\0\ndateTime: \t\t\t2022:08:02 18:02:26\0\n"\
     "YCbCr positioning: \t\tcentered\nexif tag: \t\t\t286\nGPS tag: \t\t\t8962\ndevice setting description: \t1768976384\n"\
     "compression: \t\t\tJPEG (old-style)\nJPEG interchange format: \t9318\nJPEG interchange format length: 34098\n"
+#define SEGMENT_MARKERS_CORRECT_RESULT_1M "jfif version:\t\t\t1.01\n\nother present segments include:\n"\
+    " - quantisation table (0xFFD8)\n - start of baseline DCT frame (0xFFC0)\n - huffman table (0xFFC4)"\
+    "\n - start of scan (0xFFDA)\n\n"
+#define SEGMENT_MARKERS_MESSAGE_1M "Segment Markers Data - 1m.jpg"
 
-#define SEGMENT_MARKERS_CORRECT_RESULT "\nother present segments include:\n - quantisation table (0xFFD8)\n"\
-    " - start of baseline DCT frame (0xFFD8)\n - huffman table (0xFFC4)\n - start of scan (0xFFDA)\n\n"
+#define IFD_MESSAGE_3M "IFD data - 3m.jpg"
+#define IFD_PATH_3M "../src/examples/jpg/3m.jpg"
+#define SEGMENT_MARKERS_CORRECT_RESULT_3M "jfif version:\t\t\t1.02\n\nother present segments include:\n"\
+    " - quantisation table (0xFFD8)\n - start of baseline DCT frame (0xFFC0)\n - huffman table (0xFFC4)"\
+    "\n - start of scan (0xFFDA)\n\n"
+#define SEGMENT_MARKERS_MESSAGE_3M "Segment Markers Data - 3m.jpg"
 
 
 void delete_and_recreate_results_file()
@@ -106,20 +114,28 @@ void test_fn(void (*function_ptr)(), int buffer_length, char *image_path, char *
     FILE *results_fp = fopen(RESULTS_FILE_NAME, "r");
     int n_bytes_read = read_file(buffer, results_fp);
     fclose(results_fp);
-    
+
     compare_result(buffer, n_bytes_read, correct_result, test_message, passed_count, failed_count);
 }
+
 
 int main(void)
 {
     int passed_count = 0;
     int failed_count = 0;
 
-    test_fn(jpg_print_exif_data, 1500, IFD_PATH, IFD_CORRECT_RESULT,\
-            IFD_MESSAGE, &passed_count, &failed_count);
+    test_fn(jpg_print_segment_markers_data, 300, IFD_PATH_1M, SEGMENT_MARKERS_CORRECT_RESULT_1M,\
+            SEGMENT_MARKERS_MESSAGE_1M, &passed_count, &failed_count);
+
+    test_fn(jpg_print_exif_data, 800, IFD_PATH_1M, IFD_CORRECT_RESULT_1M,\
+            IFD_MESSAGE_1M, &passed_count, &failed_count);
+
+    test_fn(jpg_print_segment_markers_data, 300, IFD_PATH_3M, SEGMENT_MARKERS_CORRECT_RESULT_3M,\
+            SEGMENT_MARKERS_MESSAGE_3M, &passed_count, &failed_count);
+
 
     print_results(passed_count, failed_count);
-    remove(RESULTS_FILE_NAME);
+    //remove(RESULTS_FILE_NAME);
 
     return 0;
 }
